@@ -9,29 +9,54 @@ function Profile(props) {
 	const [values, setValues] = useState({})
 	const [ubahData, setUbahData] = useState({
 		namalengkap: '',
+		email: '',
+		telp: '',
+		alamat: '',
 		passwordlama: '',
 		passwordbaru: '',
 		confpasswordbaru: ''
 	})
 	const [flag, setFlag] = useState({
-		flagNama: false
+		flagNama: false,
+		flagEmail: false,
+		flagTelepon: false,
+		flagAlamat: false,
 	})
+	const [Provinsi, setProvinsi] = useState([]);
+	const [KabupatenKota, setKabupatenKota] = useState([]);
+	const [Kecamatan, setKecamatan] = useState([]);
+	const [Kelurahan, setKelurahan] = useState([]);
+	const [Label, setLabel] = useState({});
 	const [errors, setErrors] = useState({});
 	const [passwordShown, setPasswordShown] = useState({
 		password_lama: false,
 		password_baru: false,
 		konf_password_baru: false
 	});
-	const [upload, setUpload] = useState({
-		id: localStorage.getItem('idProfile'),
-		nama: localStorage.getItem('namaLengkap'),
-		jenis: 'images'
-	});	
 	const gbr = values.codeLog === 1 ? values.gambar != null ? `${env.SITE_URL}images/${values.gambar}` : 'dist/img/user.png' : values.codeLog === 2 ? values.gambarGmail : 'dist/img/user.png';
 
 	useEffect(() => {
 		getData()
+		getProvinsi()
+		getKabKota(values.provinsi)
+		getKecamatan(values.kabkota)
+		getKelurahan(values.kecamatan)
 	},[])
+
+	useEffect(() => {
+		if(Object.entries(ubahData).length > 0) return setErrors(validateInput(ubahData)) 
+		// console.log(Object.entries(ubahData).length)
+	},[ubahData, flag])
+
+	useEffect(() => {
+		if(Label.kondisi){
+			getProvinsi()
+			getKabKota(values.provinsi)
+			getKecamatan(values.kabkota)
+			getKelurahan(values.kecamatan)
+		}
+		setLabel(getDataDaerah());
+	},[Provinsi, KabupatenKota, Kecamatan, Kelurahan])
 
 	const getData = async() => {
 		const response = await axios.get(`${env.SITE_URL}restApi/moduleLogin/getusers/${localStorage.getItem('idProfile')}`, {
@@ -61,10 +86,11 @@ function Profile(props) {
 		}
 	}
 
-	const ubahNama = async(nilai) => {
-		setFlag({
-			flagNama: nilai
-		})
+	const ubahKondisiData = (nilai, kondisi) => {
+		if(kondisi === 'nama'){ setFlag({...flag, flagNama: nilai}) }
+		if(kondisi === 'email'){ setFlag({...flag, flagEmail: nilai}) }
+		if(kondisi === 'telepon'){ setFlag({...flag, flagTelepon: nilai}) }
+		if(kondisi === 'alamat'){ setFlag({...flag, flagAlamat: nilai}) }
 	}
 
 	const ResponToast = (icon, msg) => {
@@ -84,9 +110,9 @@ function Profile(props) {
 			ResponToast('warning', 'Ukuran gambar terlalu besar !')
 		}else{
 			const formData = new FormData();
-			formData.append("id", upload.id);
-			formData.append("jenis", upload.jenis);
-			formData.append("nama", upload.nama);
+			formData.append("id", localStorage.getItem('idProfile'));
+			formData.append("jenis", 'images');
+			formData.append("nama", localStorage.getItem('namaLengkap'));
 			formData.append("file", dataFile);
 			try {
 				const uploadImage = await axios.post(`${env.SITE_URL}restApi/moduleLogin/updateImage`, formData, {
@@ -107,32 +133,30 @@ function Profile(props) {
 		}
 	}
 
-	const togglePasswordlama = (aksi) => {
-    setPasswordShown({
-			password_lama: aksi,
-			password_baru: passwordShown.password_baru,
-			konf_password_baru: passwordShown.konf_password_baru
-		});
-  }
-
-	const togglePasswordbaru = (aksi) => {
-    setPasswordShown({
-			password_lama: passwordShown.password_lama,
-			password_baru: aksi,
-			konf_password_baru: passwordShown.konf_password_baru
-		});
-  }
-
-	const toggleConfPasswordbaru = (aksi) => {
-    setPasswordShown({
-			password_lama: passwordShown.password_lama,
-			password_baru: passwordShown.password_baru,
-			konf_password_baru: aksi
-		});
+	const togglePassword = (aksi, kondisi) => {
+		if(kondisi === 'passLama'){
+			setPasswordShown({...passwordShown, password_lama: aksi});
+		}
+		if(kondisi === 'passBaru'){
+			setPasswordShown({...passwordShown, password_baru: aksi});
+		}
+		if(kondisi === 'passBaruConf'){
+			setPasswordShown({...passwordShown, konf_password_baru: aksi});
+		}
   }
 
 	const validateInput = (ubahData) => {
 		let error = {}
+		let regEmail = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+		let regNumber = /^[0-9\b]+$/
+
+		if(!ubahData.email && flag.flagEmail){ error.email = 'Email tidak boleh kosong' } 
+		else if(!regEmail.test(ubahData.email) && flag.flagEmail){ error.email = 'Email tidak sesuai' }
+
+		if (!ubahData.telp && flag.flagTelepon) { error.telp = "telepon tidak boleh kosong" }
+		else if(!regNumber.test(ubahData.telp) && flag.flagTelepon){ error.telp = 'Hanya boleh angka' }
+
+		if (!ubahData.alamat && flag.flagAlamat) { error.alamat = "Alamat tidak boleh kosong" }
 
 		if(!ubahData.passwordlama){
 			error.passwordlama = 'Kata Sandi Lama tidak boleh kosong'
@@ -158,42 +182,123 @@ function Profile(props) {
 	const clearForm = () => {
 		setUbahData({
 			nama: '',
+			email: '',
+			telp: '',
 			passwordlama: '',
 			passwordbaru: '',
 			confpasswordbaru: ''
 		})
 		setErrors({})
 	}
+
 	const ubahProfile = async(ubahJenis) => {
 		// e.preventDefault();
-		if(ubahJenis === 'katasandi'){
-			setErrors(validateInput(ubahData))
-		}
 		const kirimData = {
 			id: localStorage.getItem('idProfile'),
 			ubah: ubahJenis,
 			name: ubahJenis === 'nama' ? ubahData.namalengkap : null,
-			passwordlama: ubahJenis === 'nama' ? null : ubahData.passwordlama,
-			passwordbaru: ubahJenis === 'nama' ? null : ubahData.passwordbaru,
-			confPasswordbaru: ubahJenis === 'nama' ? null : ubahData.confpasswordbaru
+			email: ubahJenis === 'datapribadi' ? !flag.flagEmail ? values.email : ubahData.email : null,
+			telp: ubahJenis === 'datapribadi' ? !flag.flagTelepon ? values.telp : ubahData.telp : null,
+			passwordlama: ubahJenis === 'katasandi' ? ubahData.passwordlama : null,
+			passwordbaru: ubahJenis === 'katasandi' ? ubahData.passwordbaru : null,
+			confPasswordbaru: ubahJenis === 'katasandi' ? ubahData.confpasswordbaru : null
 		}
+		let err, pesan
+		if(ubahJenis === 'nama'){
+			if(!ubahData.namalengkap) { ubahKondisiData(false, 'nama'); ResponToast('error', "Nama Lengkap tidak boleh kosong"); return} 
+		}else if(ubahJenis === 'datapribadi'){
+			err = Object.fromEntries(Object.entries(errors).filter(([key, value]) => key !== 'passwordlama' && key !== 'passwordbaru' && key !== 'confpasswordbaru'))
+			pesan = 'Data Pribadi'
+		}else if(ubahJenis === 'katasandi'){
+			err = Object.fromEntries(Object.entries(errors).filter(([key, value]) => key === 'passwordlama' || key === 'passwordbaru' || key === 'confpasswordbaru'))
+			pesan = 'Kata Sandi'
+		}
+		if(Object.entries(err).length > 0) return ResponToast('error', `Form ${pesan} masih ada yang kosong, tolong lengkapi terlebih dahulu. TerimaKasih`)
+		console.log(kirimData)
+		// try {
+		// 	const profile_ubah = await axios.post(`${env.SITE_URL}restApi/moduleLogin/updateusers`, kirimData);
+		// 	// console.log(register)
+		// 	if(ubahJenis === 'nama'){
+		// 		ubahKondisiData(false, 'nama')
+		// 		localStorage.setItem('namaLengkap', ubahData.namalengkap)
+		// 	}
+		// 	clearForm()
+		// 	getData()
+		// 	ResponToast('success', profile_ubah.data.message)
+		// 	navigate('/profile#aktivity');
+		// } catch (error) {
+		// 	if(error.response){
+		// 		const message = error.response.data.message
+		// 		ResponToast('error', message)
+		// 	}
+		// }
+	}
+
+	const getDataDaerah = () => {
+		let label = {}
+		label.provinsi = Provinsi.find(p => p.value === values.provinsi);
+		label.kabupatenkota = KabupatenKota.find(q => q.value === values.kabkota);
+		label.kecamatan = Kecamatan.find(r => r.value === values.kecamatan);
+		label.kelurahan = Kelurahan.find(s => s.value === values.kelurahan);
+		if(label.provinsi === undefined || label.kabupatenkota === undefined || label.kecamatan === undefined || label.kelurahan === undefined){label.kondisi = true}else{label.kondisi = false}
+		return label
+	}
+
+	const getProvinsi = async() => {
 		try {
-			const profile_ubah = await axios.post(`${env.SITE_URL}restApi/moduleLogin/updateusers`, kirimData);
-			// console.log(register)
-			if(ubahJenis === 'nama'){
-				ubahNama(false)
-				localStorage.setItem('namaLengkap', ubahData.namalengkap)
-			}
-			clearForm()
-			getData()
-			ResponToast('success', profile_ubah.data.message)
-			navigate('/profile#aktivity');
+			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getprovinsi`);
+			// console.log(response.data.data)
+			setProvinsi(response.data.data);
 		} catch (error) {
-			if(error.response){
-				const message = error.response.data.message
-				ResponToast('error', message)
-			}
+			console.log(error.response.data)
+			ResponToast('error', error.response.data.message)
 		}
+	}
+
+	const getKabKota = async(idprovinsi) => {
+		try {
+			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkabkota/${idprovinsi}`);
+			setTimeout(() => {
+				setKabupatenKota(response.data.data);
+			}, 1000);
+		} catch (error) {
+			console.log(error)
+			ResponToast('error', error.response.data.message)
+		}
+	}
+
+	const getKecamatan = async(idkabkota) => {
+		try {
+			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkecamatan/${idkabkota}`);
+			setTimeout(() => {
+				setKecamatan(response.data.data);
+			}, 1000);
+		} catch (error) {
+			console.log(error.response.data)
+			ResponToast('error', error.response.data.message)
+		}
+	}
+
+	const getKelurahan = async(idkecamatan) => {
+		try {
+			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkeldesa/${idkecamatan}`);
+			setTimeout(() => {
+				setKelurahan(response.data.data);
+			}, 1000);
+		} catch (error) {
+			console.log(error.response.data)
+			ResponToast('error', error.response.data.message)
+		}
+	}
+
+	const convertDate = (str, kondisi) => {
+		const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+		const date = new Date(str);
+    // mnth = ("0" + (date.getMonth() + 1)).slice(-2),
+    const mnth = bulan[date.getMonth()];
+    const day = ("0" + date.getDate()).slice(-2);
+  	const valueConvert = kondisi === 'tanggal' ? [day, mnth, date.getFullYear()].join(" ") : String(date.getFullYear());
+		return valueConvert
 	}
 
 	return (
@@ -226,6 +331,7 @@ function Profile(props) {
 											{values.codeLog === 1 &&
 												<li className="nav-item"><a className="nav-link" href="#ubah-katasandi" data-toggle="tab">Ubah Kata Sandi</a></li>
 											}
+											<li className="nav-item"><a className="nav-link" href="#data-pribadi" data-toggle="tab">Ubah Data Pribadi</a></li>
 										</ul>
 									</div>
 									<div className="card-body">
@@ -238,36 +344,83 @@ function Profile(props) {
 											</div>
 											<div className="tab-pane" id="ubah-katasandi">
 												<>
-													<div className="input-group mb-3">
-														<input type={passwordShown.password_lama ? "text" : "password"} className="form-control" name="passwordlama" placeholder="Kata Sandi Lama" autoComplete="off" value={ubahData.passwordlama} onChange={handleChange} />
-														<div className="input-group-append">
-															<div className="input-group-text">
-																<span onClick={(aksi) => {togglePasswordlama(!passwordShown.password_lama)}} className={!passwordShown.password_lama ? "fas fa-eye" : "fas fa-eye-slash"} />
+													<div className="form-group">
+														<div className="input-group">
+															<input type={passwordShown.password_lama ? "text" : "password"} className="form-control" name="passwordlama" placeholder="Kata Sandi Lama" autoComplete="off" value={ubahData.passwordlama} onChange={handleChange} />
+															<div className="input-group-append">
+																<div className="input-group-text">
+																	<span onClick={() => {togglePassword(!passwordShown.password_lama, 'passLama')}} className={!passwordShown.password_lama ? "fas fa-eye" : "fas fa-eye-slash"} />
+																</div>
 															</div>
 														</div>
+														<p className='errorMsg'>{errors.passwordlama}</p>
 													</div>
-													<p className='errorMsg'>{errors.passwordlama}</p>
-													<div className="input-group mb-3">
-														<input type={passwordShown.password_baru ? "text" : "password"} className="form-control" name="passwordbaru" placeholder="Kata Sandi Baru" autoComplete="off" value={ubahData.passwordbaru} onChange={handleChange} />
-														<div className="input-group-append">
-															<div className="input-group-text">
-																<span onClick={(aksi) => {togglePasswordbaru(!passwordShown.password_baru)}} className={!passwordShown.password_baru ? "fas fa-eye" : "fas fa-eye-slash"} />
+													<div className="form-group">
+														<div className="input-group">
+															<input type={passwordShown.password_baru ? "text" : "password"} className="form-control" name="passwordbaru" placeholder="Kata Sandi Baru" autoComplete="off" value={ubahData.passwordbaru} onChange={handleChange} />
+															<div className="input-group-append">
+																<div className="input-group-text">
+																	<span onClick={() => {togglePassword(!passwordShown.password_baru, 'passBaru')}} className={!passwordShown.password_baru ? "fas fa-eye" : "fas fa-eye-slash"} />
+																</div>
 															</div>
 														</div>
+														<p className='errorMsg'>{errors.passwordbaru}</p>
 													</div>
-													<p className='errorMsg'>{errors.passwordbaru}</p>
-													<div className="input-group mb-3">
-														<input type={passwordShown.konf_password_baru ? "text" : "password"} className="form-control" name="confpasswordbaru" placeholder="Konfirmasi Kata Sandi Baru" autoComplete="off" value={ubahData.confpasswordbaru} onChange={handleChange} />
-														<div className="input-group-append">
-															<div className="input-group-text">
-																<span onClick={(aksi) => {toggleConfPasswordbaru(!passwordShown.konf_password_baru)}} className={!passwordShown.konf_password_baru ? "fas fa-eye" : "fas fa-eye-slash"} />
+													<div className="form-group">
+														<div className="input-group">
+															<input type={passwordShown.konf_password_baru ? "text" : "password"} className="form-control" name="confpasswordbaru" placeholder="Konfirmasi Kata Sandi Baru" autoComplete="off" value={ubahData.confpasswordbaru} onChange={handleChange} />
+															<div className="input-group-append">
+																<div className="input-group-text">
+																	<span onClick={() => {togglePassword(!passwordShown.konf_password_baru, 'passBaruConf')}} className={!passwordShown.konf_password_baru ? "fas fa-eye" : "fas fa-eye-slash"} />
+																</div>
 															</div>
 														</div>
+														<p className='errorMsg'>{errors.confpasswordbaru}</p>
 													</div>
-													<p className='errorMsg'>{errors.confpasswordbaru}</p>
 													<div className="modal-footer right-content-between">
 														<button onClick={clearForm} className="btn btn-primary btn-sm align-right">Batal</button>
 														<button onClick={(x) => {ubahProfile('katasandi')}} className="btn btn-primary btn-sm align-right">Ubah Kata Sandi</button>
+													</div>
+												</>
+											</div>
+											<div className="tab-pane" id="data-pribadi">
+												<>
+													<div className="form-group">
+														<div className="input-group">
+															<input type="email" className="form-control" name='email' placeholder="Email" autoComplete="off" value={!flag.flagEmail ? values.email : ubahData.email} disabled={!flag.flagEmail ? true : false} onChange={handleChange} />
+															<div className="input-group-append">
+																<div className="input-group-text">
+																	<span onClick={() => {ubahKondisiData(!flag.flagEmail, 'email')}} className={!flag.flagEmail ? "fas fa-unlock" : "fas fa-lock"} />
+																</div>
+															</div>
+														</div>
+														{flag.flagEmail && <p className='errorMsg'>{errors.email}</p> }
+													</div>
+													<div className="form-group">
+														<div className="input-group">
+															<input type="text" className="form-control" name='telp' placeholder="Telepon" autoComplete="off" maxLength="15" value={!flag.flagTelepon ? values.telp : ubahData.telp} disabled={!flag.flagTelepon ? true : false} onChange={handleChange} />
+															<div className="input-group-append">
+																<div className="input-group-text">
+																	<span onClick={() => {ubahKondisiData(!flag.flagTelepon, 'telepon')}} className={!flag.flagTelepon ? "fas fa-unlock" : "fas fa-lock"} />
+																</div>
+															</div>
+														</div>
+														{flag.flagTelepon && <p className='errorMsg'>{errors.telp}</p> }
+													</div>
+													<div className="form-group">
+														<div className="input-group">
+															<textarea className="form-control" rows="3" name='alamat' placeholder="Alamat" autoComplete="off" style={{resize: 'none'}} value={!flag.flagAlamat ? values.alamat : ubahData.alamat} disabled={!flag.flagAlamat ? true : false} onChange={handleChange} ></textarea>
+															<div className="input-group-append">
+																<div className="input-group-text">
+																	<span onClick={() => {ubahKondisiData(!flag.flagAlamat, 'alamat')}} className={!flag.flagAlamat ? "fas fa-unlock" : "fas fa-lock"} />
+																</div>
+															</div>
+														</div>
+														{flag.flagAlamat && <p className='errorMsg'>{errors.alamat}</p> }
+													</div>
+													<div className="modal-footer right-content-between">
+														<button onClick={clearForm} className="btn btn-primary btn-sm align-right">Batal</button>
+														<button onClick={(x) => {ubahProfile('datapribadi')}} className="btn btn-primary btn-sm align-right">Ubah Data Pribadi</button>
 													</div>
 												</>
 											</div>
@@ -286,36 +439,38 @@ function Profile(props) {
 												<input type="text" className="form-control" name="namalengkap" placeholder="Nama Lengkap" autoComplete="off" value={ubahData.namalengkap} onChange={handleChange} />
 												<div className="input-group-append">
 													<div className="input-group-text">
-														<i onClick={(x) => {ubahProfile('nama')}} className="fas fa-arrow-right text-muted" style={{cursor: 'pointer'}} />
+														<i onClick={() => {ubahProfile('nama')}} className="fas fa-arrow-right text-muted" style={{cursor: 'pointer'}} />
 													</div>
 													<div className="input-group-text">
-														<i onClick={(nilai) => {ubahNama(false)}} className="fas fa-times text-muted" title='Batal ' style={{cursor: 'pointer'}} />
+														<i onClick={() => {ubahKondisiData(false, 'nama')}} className="fas fa-times text-muted" title='Batal ' style={{cursor: 'pointer'}} />
 													</div>
 												</div>
 											</div>
 										}
 										{flag.flagNama === false &&
-											<h3 className="profile-username text-center">{values.name} <i onClick={(nilai) => {ubahNama(true)}} className="fas fa-pencil-alt" style={{cursor: 'pointer'}} /></h3>
+											<h3 className="profile-username text-center">{values.name} <i onClick={() => {ubahKondisiData(true, 'nama')}} className="fas fa-pencil-alt" style={{cursor: 'pointer'}} /></h3>
 										}
 										<p className="text-muted text-center">{values.roleName}</p>
-										<ul className="list-group list-group-unbordered mb-3">
-											<li className="list-group-item">
-												<b>Followers</b> <a className="float-right">1,322</a>
-											</li>
-											<li className="list-group-item">
-												<b>Following</b> <a className="float-right">543</a>
-											</li>
-											<li className="list-group-item">
-												<b>Friends</b> <a className="float-right">13,287</a>
-											</li>
-										</ul>
+										{values.roleID !== 1 &&
+											<ul className="list-group list-group-unbordered mb-3">
+												<li className="list-group-item">
+													<b>Pengikut</b> <a className="float-right">1,322</a>
+												</li>
+												<li className="list-group-item">
+													<b>Mengikuti</b> <a className="float-right">543</a>
+												</li>
+												<li className="list-group-item">
+													<b>Teman</b> <a className="float-right">13,287</a>
+												</li>
+											</ul>
+										}
 										<div className="form-group" style={values.codeLog === 1 ? {display: 'block'} : {display: 'none'}}>
 											<div className="btn btn-default btn-file btn-block">
 												<i className="fas fa-paperclip" /> Ubah Foto Profile
 												<input type="file" id='file' accept='image/*' title={values.codeLog === 1 ? 'Ubah Foto Profile' : 'Tidak bisa ubah Foto Profile'} onChange={(e) => {uploadFile(e.target.files[0])}} />
 												{/* <input type="file" id='file' accept='image/*' onChange={(e) => {setFiles({selectedFiles: e.target.files[0]})}} /> */}
 											</div>
-											<p className="help-block">Max. 5MB</p>
+											<p className="help-block">Maksimal File. 5MB</p>
 										</div>
 										<a onClick={keluar} className="btn btn-primary btn-block"><b>Keluar</b></a>
 									</div>
@@ -325,25 +480,24 @@ function Profile(props) {
 										<h3 className="card-title">Tentang Saya</h3>
 									</div>
 									<div className="card-body">
-										<strong><i className="fas fa-book mr-1" /> Education</strong>
+										<strong><i className="fas fa-user-alt mr-1" /> Email</strong>
+										<p className="text-muted">{values.email?values.email:'-'}</p>
+										<hr />
+										<strong><i className="fas fa-phone-alt mr-1" /> Telepon</strong>
+										<p className="text-muted">{values.telp?values.telp:'-'}</p>
+										<hr />
+										<strong><i className="fas fa-calendar-alt mr-1" /> Tempat, Tanggal Lahir</strong>
+										<p className="text-muted">{values.tempat?values.tempat:'-'}, {values.tgl_lahir?convertDate(values.tgl_lahir, 'tanggal'):'-'}</p>
+										<hr />
+										<strong><i className="fas fa-map-marker-alt mr-1" /> Alamat</strong>
 										<p className="text-muted">
-											B.S. in Computer Science from the University of Tennessee at Knoxville
+											{values.alamat&&values.alamat+', '}
+											{Label.kelurahan&&Label.kelurahan.label+', '}
+											{Label.kecamatan&&Label.kecamatan.label+', '}
+											{Label.kabupatenkota&&Label.kabupatenkota.label+', '}
+											{Label.provinsi&&Label.provinsi.label+', '}
+											{values.kode_pos&&values.kode_pos}
 										</p>
-										<hr />
-										<strong><i className="fas fa-map-marker-alt mr-1" /> Location</strong>
-										<p className="text-muted">Malibu, California</p>
-										<hr />
-										<strong><i className="fas fa-pencil-alt mr-1" /> Skills</strong>
-										<p className="text-muted">
-											<span className="tag tag-danger">UI Design</span>
-											<span className="tag tag-success">Coding</span>
-											<span className="tag tag-info">Javascript</span>
-											<span className="tag tag-warning">PHP</span>
-											<span className="tag tag-primary">Node.js</span>
-										</p>
-										<hr />
-										<strong><i className="far fa-file-alt mr-1" /> Notes</strong>
-										<p className="text-muted">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam fermentum enim neque.</p>
 									</div>
 								</div>
 							</div>
