@@ -1103,7 +1103,8 @@ function Pengguna() {
 									<i className="fas fa-cogs" data-toggle="dropdown" title='Menu'/>
 									<div className="dropdown-menu dropdown-menu-right">
 										<a className="dropdown-item" onClick={() => openDialog('tambah')} title="Tambah Data">Tambah Data<i className="fas fa-plus" style={{float: 'right'}} /></a>
-										{roleID !== '1' && <a className="dropdown-item" onClick={() => setOpenImportData(true)} title="Tambah Data">Import Data<i className="fas fa-plus" style={{float: 'right'}} /></a>}
+										{roleID !== '1' && <a className="dropdown-item" onClick={() => setOpenImportData(true)} title="Import Data">Import Data<i className="fas fa-upload" style={{float: 'right'}} /></a>}
+										{roleID !== '1' && <a className="dropdown-item" onClick={() => setOpenImportData(true)} title="Export Data">Export Data<i className="fas fa-download" style={{float: 'right'}} /></a>}
 									</div>
 								</button>
 								<button type="button" className="btn btn-tool" data-card-widget="collapse" title="Collapse">

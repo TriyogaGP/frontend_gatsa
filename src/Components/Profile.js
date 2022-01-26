@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import axios from 'axios';
+import Select from 'react-select';
 import env from 'react-dotenv'
 import Swal from 'sweetalert2';
 
@@ -21,6 +22,10 @@ function Profile(props) {
 		flagEmail: false,
 		flagTelepon: false,
 		flagAlamat: false,
+		flagProvinsi: false,
+		flagKabupatenKota: false,
+		flagKelurahan: false,
+		flagKecamatan: false,
 	})
 	const [Provinsi, setProvinsi] = useState([]);
 	const [KabupatenKota, setKabupatenKota] = useState([]);
@@ -33,29 +38,51 @@ function Profile(props) {
 		password_baru: false,
 		konf_password_baru: false
 	});
+	const [DataProvinsi, setDataProvinsi] = useState(null);
+	const [DataKabKota, setDataKabKota] = useState(null);
+	const [DataKecamatan, setDataKecamatan] = useState(null);
+	const [DataKelurahan, setDataKelurahan] = useState(null);
+	const [isloading, setIsLoading] = useState({
+		load_kabkota: false,
+		load_kecamatan: false,
+		load_kelurahan: false
+	});
 	const gbr = values.codeLog === 1 ? values.gambar != null ? `${env.SITE_URL}images/${values.gambar}` : 'dist/img/user.png' : values.codeLog === 2 ? values.gambarGmail : 'dist/img/user.png';
 
 	useEffect(() => {
 		getData()
-		getProvinsi()
-		getKabKota(values.provinsi)
-		getKecamatan(values.kabkota)
-		getKelurahan(values.kecamatan)
 	},[])
 
 	useEffect(() => {
-		if(Object.entries(ubahData).length > 0) return setErrors(validateInput(ubahData)) 
-		// console.log(Object.entries(ubahData).length)
-	},[ubahData, flag])
+		if(Object.entries(ubahData).length > 0 || flag.flagProvinsi) return setErrors(validateInput(ubahData)) 
+	},[ubahData, flag, DataProvinsi, DataKabKota, DataKecamatan, DataKelurahan])
 
 	useEffect(() => {
-		if(Label.kondisi){
+		if(Label.kondisi && !flag.flagProvinsi){
 			getProvinsi()
 			getKabKota(values.provinsi)
 			getKecamatan(values.kabkota)
 			getKelurahan(values.kecamatan)
 		}
 		setLabel(getDataDaerah());
+		if(Object.entries(Label).length > 0 && !flag.flagProvinsi){
+			setDataProvinsi({
+				value: Label.provinsi ? Label.provinsi.value : null,
+				label: Label.provinsi ? Label.provinsi.label : null
+			})
+			setDataKabKota({
+				value: Label.kabupatenkota ? Label.kabupatenkota.value : null,
+				label: Label.kabupatenkota ? Label.kabupatenkota.label : null
+			})
+			setDataKecamatan({
+				value: Label.kecamatan ? Label.kecamatan.value : null,
+				label: Label.kecamatan ? Label.kecamatan.label : null
+			})
+			setDataKelurahan({
+				value: Label.kelurahan ? Label.kelurahan.value : null,
+				label: Label.kelurahan ? Label.kelurahan.label : null
+			})
+		}
 	},[Provinsi, KabupatenKota, Kecamatan, Kelurahan])
 
 	const getData = async() => {
@@ -65,6 +92,10 @@ function Profile(props) {
 			}
 		});
 		setValues(response.data.data);
+		getProvinsi()
+		getKabKota(response.data.data.provinsi)
+		getKecamatan(response.data.data.kabkota)
+		getKelurahan(response.data.data.kecamatan)
 	}
 
 	const handleChange = (e) => {
@@ -91,6 +122,10 @@ function Profile(props) {
 		if(kondisi === 'email'){ setFlag({...flag, flagEmail: nilai}) }
 		if(kondisi === 'telepon'){ setFlag({...flag, flagTelepon: nilai}) }
 		if(kondisi === 'alamat'){ setFlag({...flag, flagAlamat: nilai}) }
+		if(kondisi === 'provinsi'){ setFlag({...flag, flagProvinsi: nilai}) }
+		if(kondisi === 'kabkota'){ setFlag({...flag, flagKabupatenKota: nilai}) }
+		if(kondisi === 'kecamatan'){ setFlag({...flag, flagKecamatan: nilai}) }
+		if(kondisi === 'kelurahan'){ setFlag({...flag, flagKelurahan: nilai}) }
 	}
 
 	const ResponToast = (icon, msg) => {
@@ -176,6 +211,11 @@ function Profile(props) {
 			error.confpasswordbaru = 'Konfirmasi Kata Sandi Baru harus sama dengan Kata Sandi'
 		}
 
+		if (!DataProvinsi) { error.provinsi = "Pilih Provinsi" }
+		if (!DataKabKota) { error.kabkota = "Pilih Kabupaten / Kota" }
+		if (!DataKecamatan) { error.kecamatan = "Pilih Kecamatan" }
+		if (!DataKelurahan) { error.kelurahan = "Pilih kelurahan / Desa" }
+		
 		return error
 	}
 
@@ -188,6 +228,7 @@ function Profile(props) {
 			passwordbaru: '',
 			confpasswordbaru: ''
 		})
+		ubahKondisiData(!flag.flagProvinsi, 'provinsi')
 		setErrors({})
 	}
 
@@ -199,6 +240,11 @@ function Profile(props) {
 			name: ubahJenis === 'nama' ? ubahData.namalengkap : null,
 			email: ubahJenis === 'datapribadi' ? !flag.flagEmail ? values.email : ubahData.email : null,
 			telp: ubahJenis === 'datapribadi' ? !flag.flagTelepon ? values.telp : ubahData.telp : null,
+			provinsi: ubahJenis === 'datapribadi' ? DataProvinsi ? DataProvinsi.value : null : null,
+			kabkota: ubahJenis === 'datapribadi' ? DataKabKota ? DataKabKota.value : null : null,
+			kecamatan: ubahJenis === 'datapribadi' ? DataKecamatan ? DataKecamatan.value : null : null,
+			kelurahan: ubahJenis === 'datapribadi' ? DataKelurahan ? DataKelurahan.value : null : null,
+			kode_pos: ubahJenis === 'datapribadi' ? Object.entries(Label).length > 0 && !flag.flagProvinsi ? values.kode_pos : DataKelurahan ? String(DataKelurahan.kode_pos) : null : null,
 			passwordlama: ubahJenis === 'katasandi' ? ubahData.passwordlama : null,
 			passwordbaru: ubahJenis === 'katasandi' ? ubahData.passwordbaru : null,
 			confPasswordbaru: ubahJenis === 'katasandi' ? ubahData.confpasswordbaru : null
@@ -256,36 +302,53 @@ function Profile(props) {
 	}
 
 	const getKabKota = async(idprovinsi) => {
+		if(!idprovinsi) return
+		setIsLoading({load_kabkota: true})
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkabkota/${idprovinsi}`);
+			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkabkota/${idprovinsi.value ? idprovinsi.value : idprovinsi}`);
+			// if(Editvalues.id) return setKabupatenKota(response.data.data);
 			setTimeout(() => {
+				setIsLoading({load_kabkota: false})
 				setKabupatenKota(response.data.data);
 			}, 1000);
 		} catch (error) {
+			setIsLoading({load_kabkota: false})
 			console.log(error)
 			ResponToast('error', error.response.data.message)
 		}
 	}
 
 	const getKecamatan = async(idkabkota) => {
+		if(!idkabkota) return
+		setIsLoading({load_kecamatan: true})
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkecamatan/${idkabkota}`);
+			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkecamatan/${idkabkota.value ? idkabkota.value : idkabkota}`);
+			// console.log(response.data.data)
+			// if(Editvalues.id) return setKecamatan(response.data.data);
 			setTimeout(() => {
+				setIsLoading({load_kecamatan: false})
 				setKecamatan(response.data.data);
 			}, 1000);
 		} catch (error) {
+			setIsLoading({load_kecamatan: false})
 			console.log(error.response.data)
 			ResponToast('error', error.response.data.message)
 		}
 	}
 
 	const getKelurahan = async(idkecamatan) => {
+		if(!idkecamatan) return
+		setIsLoading({load_kelurahan: true})
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkeldesa/${idkecamatan}`);
+			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkeldesa/${idkecamatan.value ? idkecamatan.value : idkecamatan}`);
+			// console.log(response.data.data)
+			// if(Editvalues.id) return setKelurahan(response.data.data);
 			setTimeout(() => {
+				setIsLoading({load_kelurahan: false})
 				setKelurahan(response.data.data);
 			}, 1000);
 		} catch (error) {
+			setIsLoading({load_kelurahan: false})
 			console.log(error.response.data)
 			ResponToast('error', error.response.data.message)
 		}
@@ -417,6 +480,90 @@ function Profile(props) {
 															</div>
 														</div>
 														{flag.flagAlamat && <p className='errorMsg'>{errors.alamat}</p> }
+													</div>
+													<div className="form-group">
+														<div className="input-group-date">
+															{!flag.flagProvinsi ?
+																<input type="text" className="form-control" name="provinsi" autoComplete="off" value={Label.provinsi&&Label.provinsi.label} disabled onChange={handleChange} />
+															:	
+																<Select
+																	placeholder='Pilih Provinsi'
+																	className="select-control"
+																	value={DataProvinsi}
+																	onChange={(x) => {setDataProvinsi(x); getKabKota(x); setDataKabKota(null); setDataKecamatan(null); setDataKelurahan(null);}}
+																	options={Provinsi}
+																	isDisabled={!flag.flagProvinsi ? true : false}
+																	isClearable
+																/>
+															}
+															<div className="input-group-append">
+																<div className="input-group-text">
+																	<span onClick={() => {ubahKondisiData(!flag.flagProvinsi, 'provinsi'); flag.flagProvinsi && getData(); !flag.flagProvinsi && setDataProvinsi(null); setDataKabKota(null); setDataKecamatan(null); setDataKelurahan(null); }} className={!flag.flagProvinsi ? "fas fa-unlock" : "fas fa-lock"} />
+																</div>
+															</div>
+														</div>
+														{flag.flagProvinsi && <p className='errorMsg'>{errors.provinsi}</p> }
+													</div>
+													<div className="form-group">
+														<div className="input-group-date">
+														{!flag.flagProvinsi ?
+																<input type="text" className="form-control" name="kabkota" autoComplete="off" value={Label.kabupatenkota&&Label.kabupatenkota.label} disabled onChange={handleChange} />
+															:
+																<Select
+																	placeholder='Pilih Kabupaten / Kota'
+																	className="select-control"
+																	value={DataKabKota}
+																	onChange={(x) => {setDataKabKota(x); getKecamatan(x); setDataKecamatan(null); setDataKelurahan(null);}}
+																	options={KabupatenKota}
+																	isDisabled={DataProvinsi ? isloading.load_kabkota : !DataProvinsi}
+																	isLoading={isloading.load_kabkota}
+																	isClearable
+																/>
+															}
+														</div>
+														{flag.flagProvinsi && <p className='errorMsg'>{errors.kabkota}</p> }
+													</div>
+													<div className="form-group">
+														<div className="input-group-date">
+														{!flag.flagProvinsi ?
+																<input type="text" className="form-control" name="kecamatan" autoComplete="off" value={Label.kecamatan&&Label.kecamatan.label} disabled onChange={handleChange} />
+															:
+																<Select
+																	placeholder='Pilih Kecamatan'
+																	className="select-control"
+																	value={DataKecamatan}
+																	onChange={(x) => {setDataKecamatan(x); getKelurahan(x); setDataKelurahan(null);}}
+																	options={Kecamatan}
+																	isDisabled={DataKabKota ? isloading.load_kecamatan : !DataKabKota}
+																	isLoading={isloading.load_kecamatan}
+																	isClearable
+																/>
+															}
+														</div>
+														{flag.flagProvinsi && <p className='errorMsg'>{errors.kecamatan}</p> }
+													</div>
+													<div className="form-group">
+														<div className="input-group-date">
+														{!flag.flagProvinsi ?
+																<input type="text" className="form-control" name="kelurahan" autoComplete="off" value={Label.kelurahan&&Label.kelurahan.label} disabled onChange={handleChange} />
+															:
+																<Select
+																	placeholder='Pilih Kelurahan'
+																	className="select-control"
+																	value={DataKelurahan}
+																	onChange={(x) => setDataKelurahan(x)}
+																	options={Kelurahan}
+																	isDisabled={DataKecamatan ? isloading.load_kelurahan : !DataKecamatan}
+																	isLoading={isloading.load_kelurahan}
+																	isClearable
+																/>
+															}
+														</div>
+														{flag.flagProvinsi && <p className='errorMsg'>{errors.kelurahan}</p> }
+													</div>
+													<div className="form-group">
+														<label htmlFor="name">Kode Pos</label>
+														<input type="text" className="form-control" name='kode_pos' placeholder="Kode Pos" autoComplete="off" defaultValue={Object.entries(Label).length > 0 && !flag.flagProvinsi ? values.kode_pos : DataKelurahan ? DataKelurahan.kode_pos : ''} disabled />
 													</div>
 													<div className="modal-footer right-content-between">
 														<button onClick={clearForm} className="btn btn-primary btn-sm align-right">Batal</button>
