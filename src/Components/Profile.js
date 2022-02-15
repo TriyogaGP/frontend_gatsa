@@ -8,11 +8,13 @@ import Swal from 'sweetalert2';
 function Profile(props) {
 	const navigate = useNavigate();
 	const [values, setValues] = useState({})
+	const [Viewvalues, setViewValues] = useState({})
 	const [ubahData, setUbahData] = useState({
 		namalengkap: '',
 		email: '',
 		telp: '',
 		alamat: '',
+		kode_pos: '',
 		passwordlama: '',
 		passwordbaru: '',
 		confpasswordbaru: ''
@@ -92,6 +94,13 @@ function Profile(props) {
 			}
 		});
 		setValues(response.data.data);
+		setViewValues({
+			...Viewvalues, 
+			nama_provinsi: Lower(response.data.data.nama_provinsi), 
+			nama_kabkota: Lower(response.data.data.nama_kabkota),
+			nama_kecamatan: Lower(response.data.data.nama_kecamatan),
+			nama_kelurahan: Lower(response.data.data.nama_kelurahan)
+		})
 		getProvinsi()
 		getKabKota(response.data.data.provinsi)
 		getKecamatan(response.data.data.kabkota)
@@ -191,6 +200,9 @@ function Profile(props) {
 		if (!ubahData.telp && flag.flagTelepon) { error.telp = "telepon tidak boleh kosong" }
 		else if(!regNumber.test(ubahData.telp) && flag.flagTelepon){ error.telp = 'Hanya boleh angka' }
 
+		// if (!ubahData.kode_pos && flag.flagProvinsi) { error.kode_pos = "Kode Pos tidak boleh kosong" }
+		// else if(!regNumber.test(ubahData.kode_pos) && flag.flagProvinsi){ error.kode_pos = 'Hanya boleh angka' }
+
 		if (!ubahData.alamat && flag.flagAlamat) { error.alamat = "Alamat tidak boleh kosong" }
 
 		if(!ubahData.passwordlama){
@@ -221,14 +233,19 @@ function Profile(props) {
 
 	const clearForm = () => {
 		setUbahData({
-			nama: '',
+			namalengkap: '',
 			email: '',
 			telp: '',
+			alamat: '',
+			kode_pos: '',
 			passwordlama: '',
 			passwordbaru: '',
 			confpasswordbaru: ''
 		})
-		ubahKondisiData(!flag.flagProvinsi, 'provinsi')
+		ubahKondisiData(false, 'email')
+		ubahKondisiData(false, 'telepon')
+		ubahKondisiData(false, 'alamat')
+		ubahKondisiData(false, 'provinsi')
 		setErrors({})
 	}
 
@@ -240,6 +257,7 @@ function Profile(props) {
 			name: ubahJenis === 'nama' ? ubahData.namalengkap : null,
 			email: ubahJenis === 'datapribadi' ? !flag.flagEmail ? values.email : ubahData.email : null,
 			telp: ubahJenis === 'datapribadi' ? !flag.flagTelepon ? values.telp : ubahData.telp : null,
+			alamat: ubahJenis === 'datapribadi' ? !flag.flagAlamat ? values.alamat : ubahData.alamat : null,
 			provinsi: ubahJenis === 'datapribadi' ? DataProvinsi ? DataProvinsi.value : null : null,
 			kabkota: ubahJenis === 'datapribadi' ? DataKabKota ? DataKabKota.value : null : null,
 			kecamatan: ubahJenis === 'datapribadi' ? DataKecamatan ? DataKecamatan.value : null : null,
@@ -260,24 +278,23 @@ function Profile(props) {
 			pesan = 'Kata Sandi'
 		}
 		if(Object.entries(err).length > 0) return ResponToast('error', `Form ${pesan} masih ada yang kosong, tolong lengkapi terlebih dahulu. TerimaKasih`)
-		console.log(kirimData)
-		// try {
-		// 	const profile_ubah = await axios.post(`${env.SITE_URL}restApi/moduleLogin/updateusers`, kirimData);
-		// 	// console.log(register)
-		// 	if(ubahJenis === 'nama'){
-		// 		ubahKondisiData(false, 'nama')
-		// 		localStorage.setItem('namaLengkap', ubahData.namalengkap)
-		// 	}
-		// 	clearForm()
-		// 	getData()
-		// 	ResponToast('success', profile_ubah.data.message)
-		// 	navigate('/profile#aktivity');
-		// } catch (error) {
-		// 	if(error.response){
-		// 		const message = error.response.data.message
-		// 		ResponToast('error', message)
-		// 	}
-		// }
+		// console.log(kirimData)
+		try {
+			const profile_ubah = await axios.post(`${env.SITE_URL}restApi/moduleLogin/updateusers`, kirimData);
+			if(ubahJenis === 'nama'){
+				ubahKondisiData(false, 'nama')
+				localStorage.setItem('namaLengkap', ubahData.namalengkap)
+			}
+			clearForm()
+			getData()
+			ResponToast('success', profile_ubah.data.message)
+			navigate('/profile');
+		} catch (error) {
+			if(error.response){
+				const message = error.response.data.message
+				ResponToast('error', message)
+			}
+		}
 	}
 
 	const getDataDaerah = () => {
@@ -364,6 +381,10 @@ function Profile(props) {
 		return valueConvert
 	}
 
+	const Lower = (str) => {
+		return str.toLowerCase()
+	}
+	
 	return (
 		<div className="content-wrapper">
 			<section className="content-header">
@@ -490,7 +511,7 @@ function Profile(props) {
 																	placeholder='Pilih Provinsi'
 																	className="select-control"
 																	value={DataProvinsi}
-																	onChange={(x) => {setDataProvinsi(x); getKabKota(x); setDataKabKota(null); setDataKecamatan(null); setDataKelurahan(null);}}
+																	onChange={(x) => {setDataProvinsi(x); getKabKota(x); setDataKabKota(null); setDataKecamatan(null); setDataKelurahan(null); setUbahData({...ubahData, kode_pos: ''});}}
 																	options={Provinsi}
 																	isDisabled={!flag.flagProvinsi ? true : false}
 																	isClearable
@@ -513,7 +534,7 @@ function Profile(props) {
 																	placeholder='Pilih Kabupaten / Kota'
 																	className="select-control"
 																	value={DataKabKota}
-																	onChange={(x) => {setDataKabKota(x); getKecamatan(x); setDataKecamatan(null); setDataKelurahan(null);}}
+																	onChange={(x) => {setDataKabKota(x); getKecamatan(x); setDataKecamatan(null); setDataKelurahan(null); setUbahData({...ubahData, kode_pos: ''});}}
 																	options={KabupatenKota}
 																	isDisabled={DataProvinsi ? isloading.load_kabkota : !DataProvinsi}
 																	isLoading={isloading.load_kabkota}
@@ -532,7 +553,7 @@ function Profile(props) {
 																	placeholder='Pilih Kecamatan'
 																	className="select-control"
 																	value={DataKecamatan}
-																	onChange={(x) => {setDataKecamatan(x); getKelurahan(x); setDataKelurahan(null);}}
+																	onChange={(x) => {setDataKecamatan(x); getKelurahan(x); setDataKelurahan(null); setUbahData({...ubahData, kode_pos: ''});}}
 																	options={Kecamatan}
 																	isDisabled={DataKabKota ? isloading.load_kecamatan : !DataKabKota}
 																	isLoading={isloading.load_kecamatan}
@@ -562,8 +583,8 @@ function Profile(props) {
 														{flag.flagProvinsi && <p className='errorMsg'>{errors.kelurahan}</p> }
 													</div>
 													<div className="form-group">
-														<label htmlFor="name">Kode Pos</label>
-														<input type="text" className="form-control" name='kode_pos' placeholder="Kode Pos" autoComplete="off" defaultValue={Object.entries(Label).length > 0 && !flag.flagProvinsi ? values.kode_pos : DataKelurahan ? DataKelurahan.kode_pos : ''} disabled />
+														<input type="text" className="form-control" name='kode_pos' placeholder="Kode Pos" autoComplete="off" maxLength="5" value={Object.entries(Label).length > 0 && !flag.flagProvinsi ? values.kode_pos : DataKelurahan ? DataKelurahan.kode_pos : ubahData.kode_pos} disabled={Object.entries(Label).length > 0 && !flag.flagProvinsi ? values.kode_pos : DataKelurahan && DataKelurahan.kode_pos ? true : false} onChange={handleChange} />
+														{/* {flag.flagProvinsi && <p className='errorMsg'>{errors.kode_pos}</p> } */}
 													</div>
 													<div className="modal-footer right-content-between">
 														<button onClick={clearForm} className="btn btn-primary btn-sm align-right">Batal</button>
@@ -637,13 +658,13 @@ function Profile(props) {
 										<p className="text-muted">{values.tempat?values.tempat:'-'}, {values.tgl_lahir?convertDate(values.tgl_lahir, 'tanggal'):'-'}</p>
 										<hr />
 										<strong><i className="fas fa-map-marker-alt mr-1" /> Alamat</strong>
-										<p className="text-muted">
-											{values.alamat&&values.alamat+', '}
-											{Label.kelurahan&&Label.kelurahan.label+', '}
-											{Label.kecamatan&&Label.kecamatan.label+', '}
-											{Label.kabupatenkota&&Label.kabupatenkota.label+', '}
-											{Label.provinsi&&Label.provinsi.label+', '}
-											{values.kode_pos&&values.kode_pos}
+										<p className="text-muted capitalize">
+											{values.alamat+', '}
+											{Viewvalues.nama_kelurahan+', '}
+											{Viewvalues.nama_kecamatan+', '}
+											{Viewvalues.nama_kabkota+', '}
+											{Viewvalues.nama_provinsi+', '}
+											{values.kode_pos}
 										</p>
 									</div>
 								</div>

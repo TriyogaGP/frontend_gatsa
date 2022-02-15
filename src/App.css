@@ -105,6 +105,9 @@
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
+.capitalize {
+  text-transform: capitalize;
+}
 
 .css-1s2u09g-control {
 -webkit-align-items: center;

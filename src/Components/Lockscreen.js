@@ -14,6 +14,8 @@ function Lockscreen() {
 	});
 	const [errors, setErrors] = useState({});
 	const navigate = useNavigate();
+	const d = new Date();
+	let year = d.getFullYear();
 
 	useEffect(() => {
 		if(localStorage.getItem('access_token') != null){
@@ -183,7 +185,7 @@ function Lockscreen() {
 					<a onClick={gotoLogin} className="text-black" style={{cursor: 'pointer'}}>Atau masuk dengan akun yang lain</a>
 				</div>
 				<div className="lockscreen-footer text-center">
-					Copyright © 2014-2021 <b><a href="https://adminlte.io" className="text-black">AdminLTE.io</a></b><br />
+					Copyright © {year} <b><a href="/dashboard" className="text-black">MTsS SIROJUL ATHFAL</a></b><br />
 					All rights reserved
 				</div>
 			</div>			

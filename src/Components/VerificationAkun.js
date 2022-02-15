@@ -7,12 +7,14 @@ import Swal from "sweetalert2";
 
 function VerificationAkun() {	
 	const hours = 0, minutes = 5, seconds = 0
-  const [[hrs, mins, secs], setTime] = useState([hours, minutes, seconds]);
+  	const [[hrs, mins, secs], setTime] = useState([hours, minutes, seconds]);
 	const [values, setValues] = useState({
 		kodeVerifikasi: '',
 	});
 	const [errors, setErrors] = useState({});
 	const navigate = useNavigate();
+	const d = new Date();
+	let year = d.getFullYear();
 
 	useEffect(() => {
 		if(localStorage.getItem('kodeOTP') === null || localStorage.getItem('kodeOTP') === 'undefined') return navigate('/register') 
@@ -149,7 +151,7 @@ function VerificationAkun() {
 					<b>Halaman ini tidak akan bisa di buka jika anda refresh, Terimakasih..</b>
 				</div>
 				<div className="lockscreen-footer text-center">
-					Copyright © 2014-2021 <b className="text-black">AdminLTE.io</b><br />
+					Copyright © {year} <b><a href="/dashboard" className="text-black">MTsS SIROJUL ATHFAL</a></b><br />
 					All rights reserved
 				</div>
 			</div>			
