@@ -27,6 +27,12 @@ function Header(props) {
 			console.log(error);
 		}
 	}
+
+	const LowerCase = (str) => {
+		const kata = String(str)
+		return kata.split(' ').map(i => i[0].toUpperCase() + i.substring(1).toLowerCase()).join(' ')
+	}
+
 	return (
 		<>
 			<nav className="main-header navbar navbar-expand navbar-dark">
@@ -116,11 +122,11 @@ function Header(props) {
 					<li className="nav-item dropdown">
 						<a className="nav-link" data-toggle="dropdown" href="/">
 							<div className="image">
-								<img src={gbr} className="img-circle elevation-2" alt="User Image" style={{width: 30}} />
+								<img src={gbr} className="img-circle elevation-2" alt="User Image" style={{width: '28px', height: '28px'}} />
 							</div>
 						</a>
 						<div className="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-							<Link to='/profile'><span className="dropdown-item dropdown-header" style={{cursor: 'pointer'}}>{props.namaLengkap}</span></Link>
+							<Link to='/profile'><span className="dropdown-item dropdown-header" style={{cursor: 'pointer'}}>{LowerCase(props.namaLengkap)}</span></Link>
 							<div className="dropdown-divider" />
 							<a onClick={keluar} className="dropdown-item" style={{cursor: 'pointer'}}>Keluar <i className="fa fa-sign-out-alt" style={{float: 'right'}}/></a>
 						</div>

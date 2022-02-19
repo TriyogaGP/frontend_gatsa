@@ -156,7 +156,7 @@ function Profile(props) {
 			const formData = new FormData();
 			formData.append("id", localStorage.getItem('idProfile'));
 			formData.append("jenis", 'images');
-			formData.append("nama", localStorage.getItem('namaLengkap'));
+			formData.append("nama", LowerCase(localStorage.getItem('namaLengkap')));
 			formData.append("file", dataFile);
 			try {
 				const uploadImage = await axios.post(`${env.SITE_URL}restApi/moduleLogin/updateImage`, formData, {
@@ -384,6 +384,11 @@ function Profile(props) {
 	const Lower = (str) => {
 		return str.toLowerCase()
 	}
+
+	const LowerCase = (str) => {
+		const kata = String(str)
+		return kata.split(' ').map(i => i[0].toUpperCase() + i.substring(1).toLowerCase()).join(' ')
+	}
 	
 	return (
 		<div className="content-wrapper">
@@ -415,7 +420,9 @@ function Profile(props) {
 											{values.codeLog === 1 &&
 												<li className="nav-item"><a className="nav-link" href="#ubah-katasandi" data-toggle="tab">Ubah Kata Sandi</a></li>
 											}
-											<li className="nav-item"><a className="nav-link" href="#data-pribadi" data-toggle="tab">Ubah Data Pribadi</a></li>
+											{values.roleID !== 3 &&
+												<li className="nav-item"><a className="nav-link" href="#data-pribadi" data-toggle="tab">Ubah Data Pribadi</a></li>
+											}
 										</ul>
 									</div>
 									<div className="card-body">
@@ -430,7 +437,7 @@ function Profile(props) {
 												<>
 													<div className="form-group">
 														<div className="input-group">
-															<input type={passwordShown.password_lama ? "text" : "password"} className="form-control" name="passwordlama" placeholder="Kata Sandi Lama" autoComplete="off" value={ubahData.passwordlama} onChange={handleChange} />
+															<input type={passwordShown.password_lama ? "text" : "password"} className="form-control" name="passwordlama" placeholder="Kata Sandi Lama" autoComplete="off" maxLength="8" value={ubahData.passwordlama} onChange={handleChange} />
 															<div className="input-group-append">
 																<div className="input-group-text">
 																	<span onClick={() => {togglePassword(!passwordShown.password_lama, 'passLama')}} className={!passwordShown.password_lama ? "fas fa-eye" : "fas fa-eye-slash"} />
@@ -441,7 +448,7 @@ function Profile(props) {
 													</div>
 													<div className="form-group">
 														<div className="input-group">
-															<input type={passwordShown.password_baru ? "text" : "password"} className="form-control" name="passwordbaru" placeholder="Kata Sandi Baru" autoComplete="off" value={ubahData.passwordbaru} onChange={handleChange} />
+															<input type={passwordShown.password_baru ? "text" : "password"} className="form-control" name="passwordbaru" placeholder="Kata Sandi Baru" autoComplete="off" maxLength="8" value={ubahData.passwordbaru} onChange={handleChange} />
 															<div className="input-group-append">
 																<div className="input-group-text">
 																	<span onClick={() => {togglePassword(!passwordShown.password_baru, 'passBaru')}} className={!passwordShown.password_baru ? "fas fa-eye" : "fas fa-eye-slash"} />
@@ -452,7 +459,7 @@ function Profile(props) {
 													</div>
 													<div className="form-group">
 														<div className="input-group">
-															<input type={passwordShown.konf_password_baru ? "text" : "password"} className="form-control" name="confpasswordbaru" placeholder="Konfirmasi Kata Sandi Baru" autoComplete="off" value={ubahData.confpasswordbaru} onChange={handleChange} />
+															<input type={passwordShown.konf_password_baru ? "text" : "password"} className="form-control" name="confpasswordbaru" placeholder="Konfirmasi Kata Sandi Baru" autoComplete="off" maxLength="8" value={ubahData.confpasswordbaru} onChange={handleChange} />
 															<div className="input-group-append">
 																<div className="input-group-text">
 																	<span onClick={() => {togglePassword(!passwordShown.konf_password_baru, 'passBaruConf')}} className={!passwordShown.konf_password_baru ? "fas fa-eye" : "fas fa-eye-slash"} />
@@ -600,7 +607,7 @@ function Profile(props) {
 								<div className="card card-primary card-outline">
 									<div className="card-body box-profile">
 										<div className="text-center">
-											<img className="profile-user-img img-fluid img-circle" src={gbr} alt="User profile picture" />
+											<img className="profile-user-img img-fluid img-circle" src={gbr} alt="User profile picture" style={{width: '100px', height: '100px'}} />
 										</div>
 										{flag.flagNama === true &&
 											<div className="input-group mb-3" style={{marginTop: '10px'}}>
@@ -616,9 +623,15 @@ function Profile(props) {
 											</div>
 										}
 										{flag.flagNama === false &&
-											<h3 className="profile-username text-center">{values.name} <i onClick={() => {ubahKondisiData(true, 'nama')}} className="fas fa-pencil-alt" style={{cursor: 'pointer'}} /></h3>
+											<h3 className="profile-username text-center">{LowerCase(values.name)} {values.roleID !== 3 && <i onClick={() => {ubahKondisiData(true, 'nama')}} className="fas fa-pencil-alt" style={{cursor: 'pointer'}} />}</h3>
 										}
-										<p className="text-muted text-center">{values.roleName}</p>
+										<p className="text-muted text-center">{values.roleName} 
+										{values.roleID === 2 && ' ('+values.mengajar_bidang+')'}
+										<br/><b>{values.roleID === 2 && values.jabatan_guru}</b>	
+										{values.roleID === 3 && (`
+											(${values.kelas})
+										`)}
+										</p>
 										{values.roleID !== 1 &&
 											<ul className="list-group list-group-unbordered mb-3">
 												<li className="list-group-item">
@@ -655,11 +668,11 @@ function Profile(props) {
 										<p className="text-muted">{values.telp?values.telp:'-'}</p>
 										<hr />
 										<strong><i className="fas fa-calendar-alt mr-1" /> Tempat, Tanggal Lahir</strong>
-										<p className="text-muted">{values.tempat?values.tempat:'-'}, {values.tgl_lahir?convertDate(values.tgl_lahir, 'tanggal'):'-'}</p>
+										<p className="text-muted">{values.tempat?LowerCase(values.tempat):'-'}, {values.tgl_lahir?convertDate(values.tgl_lahir, 'tanggal'):'-'}</p>
 										<hr />
 										<strong><i className="fas fa-map-marker-alt mr-1" /> Alamat</strong>
 										<p className="text-muted capitalize">
-											{values.alamat+', '}
+											{LowerCase(values.alamat)+', '}
 											{Viewvalues.nama_kelurahan+', '}
 											{Viewvalues.nama_kecamatan+', '}
 											{Viewvalues.nama_kabkota+', '}

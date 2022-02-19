@@ -83,7 +83,10 @@ function Pengguna() {
 	const [open, setOpen] = useState(false);
 	const [openImportData, setOpenImportData] = useState(false);
 	const [viewData, setViewData] = useState(false);
-	const [viewBerkas, setviewBerkas] = useState(false);
+	const [viewBerkas, setviewBerkas] = useState({
+		kondisi: false,
+		bagian: null
+	});
 	const [Label, setLabel] = useState({});
 	const [Berkas, setBerkas] = useState(null);
 	const navigate = useNavigate();
@@ -281,7 +284,7 @@ function Pengguna() {
 
 	const getKelas = async() => {
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkelas`);
+			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkelas?kelas=ALL`);
 			// console.log(response.data.data)
 			setPilihKelas(response.data.data);
 		} catch (error) {
@@ -387,6 +390,7 @@ function Pengguna() {
 				window.location.reload()
 			} catch (error) {
 				if(error.response){
+					importexcel.current.value = ''
 					const message = error.response.data.message
 					ResponToast('error', message)
 				}
@@ -407,9 +411,9 @@ function Pengguna() {
 		})
 	}
 
-	const exportData = (roleid) => {
+	const exportData = (roleid, kategori) => {
 		Loading(`Sedang melakukan proses export data ${roleid === '3' ? 'siswa' : 'guru'}`)
-		fetch(`${env.SITE_URL}restApi/moduleuser/exportexcel/${roleid}`, {
+		fetch(`${env.SITE_URL}restApi/moduleuser/exportexcel/${roleid}/?export=${kategori}`, {
 			method: 'GET',
       dataType: "xml",
 		})
@@ -446,7 +450,8 @@ function Pengguna() {
 		}else{
 			const formData = new FormData();
 			formData.append("id", Lookvalues.id_profile);
-			formData.append("nama", kondisi+'_'+Lookvalues.id_profile);
+			formData.append("nomor_induk", Lookvalues.nomor_induk);
+			formData.append("nama", kondisi+'_'+Lookvalues.id_profile+'_'+Lookvalues.nomor_induk);
 			formData.append("namaBerkas", kondisi);
 			formData.append("file", dataFile);
 			setLookValues({})
@@ -467,6 +472,11 @@ function Pengguna() {
 				navigate(`/pengguna?page=${match?.[1]}`);
 			} catch (error) {
 				if(error.response){
+					if(kondisi==='ijazah'){fc_ijazah.current.value = "";}
+					else if(kondisi==='kk'){fc_kk.current.value = "";}
+					else if(kondisi==='ktp'){fc_ktp_ortu.current.value = "";}
+					else if(kondisi==='aktalahir'){fc_akta_lahir.current.value = "";}
+					else if(kondisi==='skl'){fc_skl.current.value = "";}
 					const message = error.response.data.message
 					ResponToast('error', message)
 				}
@@ -562,12 +572,13 @@ function Pengguna() {
 			jabatan_guru: roleID === '2' ? Jabatan ? Jabatan.value : null : null,
 			mengajar_bidang: roleID === '2' ? Mengajar ? Mengajar.value : null : null,
 			mengajar_kelas: roleID === '2' ? Editvalues.mengajar_kelas : null,
+			walikelas: roleID === '2' && Jabatan && Jabatan.value === 'Wali Kelas' ? Editvalues.walikelas : null,
 		}
 		if(Object.entries(errors).length > 0) return ResponToast('error', 'Form masih ada yang kosong, tolong lengkapi terlebih dahulu. TerimaKasih')
 		// console.log(payload)
 		setLoading(true) 
 		setValues([])
-		Loading('Sedang melakukan proses konfirmasi pendaftaran akun ke alamat email anda')
+		Loading(!Editvalues.id ? 'Sedang melakukan proses pengiriman konfirmasi pendaftaran akun ke alamat email anda' : 'Sedang melakukan proses update akun ke alamat email anda')
 		try {
 			const dataUsers = await axios.post(`${env.SITE_URL}restApi/moduleUser/createupdateusers`, payload);
 			getData(roleID)
@@ -594,15 +605,17 @@ function Pengguna() {
     }
 	}
 
-	const selectActiveAkun = async(e) => {
-		let activeAkun = e.target.checked === true ? '1' : '0'
+	const selectAkun = async(e, jenis) => {
+		let kondisi = e.target.checked === true ? '1' : '0'
 		try {
-			const aktifAkun = await axios.post(`${env.SITE_URL}restApi/moduleUser/updateuserby`, {
+			const Akun = await axios.post(`${env.SITE_URL}restApi/moduleUser/updateuserby`, {
 				id: e.target.value,
-				jenis: 'activeAkun',
-				activeAkun: activeAkun
+				jenis: jenis,
+				activeAkun: jenis == 'activeAkun' ? kondisi : null,
+				validasiAkun: jenis == 'validasiAkun' ? kondisi : null,
+				mutationAkun: jenis == 'mutationAkun' ? kondisi : null,
 			});
-			ResponToast('success', aktifAkun.data.message)
+			ResponToast('success', Akun.data.message)
 			navigate(`/pengguna?page=${match?.[1]}`);
 		} catch (error) {
 			if(error.response){
@@ -737,6 +750,17 @@ function Pengguna() {
 
 	const lookRecord = (record) => {
 		// console.log("Look Record", record);
+		record = {
+			...record, 
+			name: LowerCase(record.name),
+			tempat: LowerCase(record.tempat),
+			alamat: LowerCase(record.alamat),
+			nama_sekolah: record.nama_sekolah ? LowerCase(record.nama_sekolah) : null,
+			nama_kk: record.nama_kk ? LowerCase(record.nama_kk) : null,
+			nama_ayah: record.nama_ayah ? LowerCase(record.nama_ayah) : null,
+			nama_ibu: record.nama_ibu ? LowerCase(record.nama_ibu) : null,
+			nama_wali: record.nama_wali ? LowerCase(record.nama_wali) : null,
+		}
 		setLookValues(record)
 		getKelas()
 		setKelas(null)
@@ -744,7 +768,7 @@ function Pengguna() {
 			...Viewvalues, 
 			nama_provinsi: Lower(record.nama_provinsi), 
 			nama_kabkota: Lower(record.nama_kabkota),
-			nama_kabkota_sekolah: Lower(record.nama_kabkot_sekolah),
+			nama_kabkota_sekolah: record.nama_kabkot_sekolah ? Lower(record.nama_kabkot_sekolah) : null,
 			nama_kecamatan: Lower(record.nama_kecamatan),
 			nama_kelurahan: Lower(record.nama_kelurahan)
 		})
@@ -834,6 +858,20 @@ function Pengguna() {
 			tahunlahir_wali: record.tahun_wali
 		})
 		setViewData(true)
+	}
+
+	const PDFCreate = (id) => {
+		// console.log(id)
+		fetch(`${env.SITE_URL}restApi/moduleuser/detailUserPDF/${id}`, {
+			method: 'GET',
+      dataType: "xml",
+		})
+		.then(response => response.arrayBuffer())
+		.then(response => {
+			let blob = new Blob([response], { type: 'application/pdf' })
+			setBerkas(window.URL.createObjectURL(blob))
+			setviewBerkas({kondisi: true, bagian: 'siswa'}); 
+		})
 	}
 
 	const togglePassword = (aksi) => {
@@ -999,17 +1037,21 @@ function Pengguna() {
 			
 			if (!Editvalues.alamat_sekolah) { error.alamat_sekolah = "Alamat Sekolah tidak boleh kosong" }
 			
-			if (!Editvalues.no_peserta_un) { error.no_peserta_un = "Nomor Peserta UN tidak boleh kosong" }
-			else if (!regNumber.test(Editvalues.no_peserta_un)) { error.no_peserta_un = "Hanya boleh angka" }
+			// if (!Editvalues.no_peserta_un) { error.no_peserta_un = "Nomor Peserta UN tidak boleh kosong" }
+			// else 
+			if (!regNumber.test(Editvalues.no_peserta_un) && Editvalues.no_peserta_un) { error.no_peserta_un = "Hanya boleh angka" }
 			
-			if (!Editvalues.no_skhun) { error.no_skhun = "Nomor SKHUN tidak boleh kosong" }
-			else if (!regNumber.test(Editvalues.no_skhun)) { error.no_skhun = "Hanya boleh angka" }
+			// if (!Editvalues.no_skhun) { error.no_skhun = "Nomor SKHUN tidak boleh kosong" }
+			// else 
+			if (!regNumber.test(Editvalues.no_skhun) && Editvalues.no_skhun) { error.no_skhun = "Hanya boleh angka" }
 			
-			if (!Editvalues.no_ijazah) { error.no_ijazah = "Nomor Ijazah tidak boleh kosong" }
-			else if (!regNumber.test(Editvalues.no_ijazah)) { error.no_ijazah = "Hanya boleh angka" }
+			// if (!Editvalues.no_ijazah) { error.no_ijazah = "Nomor Ijazah tidak boleh kosong" }
+			// else 
+			if (!regNumber.test(Editvalues.no_ijazah) && Editvalues.no_ijazah) { error.no_ijazah = "Hanya boleh angka" }
 			
-			if (!Editvalues.nilai_un) { error.nilai_un = "Total Nilai UN tidak boleh kosong" }
-			else if (!regNumber.test(Editvalues.nilai_un)) { error.nilai_un = "Hanya boleh angka" }
+			// if (!Editvalues.nilai_un) { error.nilai_un = "Total Nilai UN tidak boleh kosong" }
+			// else 
+			if (!regNumber.test(Editvalues.nilai_un) && Editvalues.nilai_un) { error.nilai_un = "Hanya boleh angka" }
 			
 			if (!Editvalues.no_kk) { error.no_kk = "Nomor Kartu Keluarga tidak boleh kosong" }
 			else if (!regNumber.test(Editvalues.no_kk)) { error.no_kk = "Hanya boleh angka" }
@@ -1065,6 +1107,10 @@ function Pengguna() {
 		return str.toLowerCase()
 	}
 
+	const LowerCase = (str) => {
+		return str.split(' ').map(i => i[0].toUpperCase() + i.substring(1).toLowerCase()).join(' ')
+	}
+
 	const columns = [
 		{
 			key: "check",
@@ -1112,6 +1158,15 @@ function Pengguna() {
 			className: "name",
 			align: "center",
 			width: '15%',
+			cell: record => { 
+				return (
+					<Fragment>
+						<div className='capitalize' style={{textAlign: 'left'}}>
+							{Lower(record.name)}
+						</div>
+					</Fragment>
+				);
+			}
 		},
 		{
 			key: "email",
@@ -1119,6 +1174,22 @@ function Pengguna() {
 			className: "email",
 			width: '15%',
 			align: "center",
+		},
+		{
+			key: "kelas",
+			text: "Kelas",
+			className: "kelas",
+			width: '7%',
+			align: "center",
+			cell: record => { 
+				return (
+					<Fragment>
+						<div style={{textAlign: 'center'}}>
+							{record.kelas ? record.kelas : '-'}
+						</div>
+					</Fragment>
+				);
+			}
 		},
 		{
 			key: "activeAkun",
@@ -1132,8 +1203,50 @@ function Pengguna() {
 						<div style={{textAlign: 'center'}}>
 							<div className="form-group">
 								<div className="custom-control custom-switch custom-switch-off-default custom-switch-on-success">
-									<input type="checkbox" className="custom-control-input" id={"aktivAkun"+record.id} value={record.id} onChange={(e) => selectActiveAkun(e)} defaultChecked={record.activeAkun === 0 ? '' : 'checked' } />
+									<input type="checkbox" className="custom-control-input" id={"aktivAkun"+record.id} value={record.id} onChange={(e) => selectAkun(e, 'activeAkun')} defaultChecked={record.activeAkun === 0 ? '' : 'checked' } />
 									<label className="custom-control-label" htmlFor={"aktivAkun"+record.id}></label>
+								</div>
+							</div>
+						</div>
+					</Fragment>
+				);
+			}
+		},
+		{
+			key: "validasiAkun",
+			text: "Validasi Akun",
+			className: "validasiAkun",
+			width: '12%',
+			align: "center",
+			cell: record => { 
+				return (
+					<Fragment>
+						<div style={{textAlign: 'center'}}>
+							<div className="form-group">
+								<div className="custom-control custom-switch custom-switch-off-default custom-switch-on-success">
+									<input type="checkbox" className="custom-control-input" id={"validasiAkun"+record.id} value={record.id} onChange={(e) => selectAkun(e, 'validasiAkun')} defaultChecked={record.validasiAkun === 0 ? '' : 'checked' } />
+									<label className="custom-control-label" htmlFor={"validasiAkun"+record.id}></label>
+								</div>
+							</div>
+						</div>
+					</Fragment>
+				);
+			}
+		},
+		{
+			key: "mutationAkun",
+			text: "Mutasi Akun",
+			className: "mutationAkun",
+			width: '12%',
+			align: "center",
+			cell: record => { 
+				return (
+					<Fragment>
+						<div style={{textAlign: 'center'}}>
+							<div className="form-group">
+								<div className="custom-control custom-switch custom-switch-off-default custom-switch-on-success">
+									<input type="checkbox" className="custom-control-input" id={"mutationAkun"+record.id} value={record.id} onChange={(e) => selectAkun(e, 'mutationAkun')} defaultChecked={record.mutationAkun === 0 ? '' : 'checked' } />
+									<label className="custom-control-label" htmlFor={"mutationAkun"+record.id}></label>
 								</div>
 							</div>
 						</div>
@@ -1145,7 +1258,7 @@ function Pengguna() {
 			key: "action",
 			text: "Aksi",
 			className: "action",
-			width: '12%',
+			width: '20%',
 			align: "center",
 			cell: record => { 
 				return (
@@ -1154,22 +1267,20 @@ function Pengguna() {
 							<button
 								className="btn btn-primary btn-xs"
 								title="Ubah Data"
-								onClick={() => editRecord(record)}
-								style={{marginRight: '5px'}}>
+								onClick={() => editRecord(record)}>
 								<i className="fa fa-pencil-alt"></i>
 							</button>
 							<button
 								className="btn btn-danger btn-xs"
 								title="Hapus Data"
 								onClick={() => deleteRecord(record)}
-								style={{marginRight: '5px'}}>
+								style={{margin: '5px'}}>
 								<i className="fa fa-trash-alt"></i>
 							</button>
 							<button
 								className="btn btn-success btn-xs"
 								title="Lihat Data"
-								onClick={() => lookRecord(record)}
-								style={{marginRight: '5px'}}>
+								onClick={() => lookRecord(record)}>
 								<i className="fa fa-expand-alt"></i>
 							</button>
 						</div>
@@ -1410,7 +1521,7 @@ function Pengguna() {
 									<div className="dropdown-menu dropdown-menu-right">
 										<a className="dropdown-item" onClick={() => openDialog('tambah')} title="Tambah Data">Tambah Data<i className="fas fa-plus" style={{float: 'right'}} /></a>
 										{roleID === '3' && <a className="dropdown-item" onClick={() => setOpenImportData(true)} title="Import Data">Import Data<i className="fas fa-upload" style={{float: 'right'}} /></a>}
-										{roleID !== '1' && <a className="dropdown-item" onClick={() => exportData(roleID)} title="Export Data">Export Data<i className="fas fa-download" style={{float: 'right'}} /></a>}
+										{roleID !== '1' && <a className="dropdown-item" onClick={() => exportData(roleID, 'dariAdmin')} title="Export Data">Export Data<i className="fas fa-download" style={{float: 'right'}} /></a>}
 									</div>
 								</button>
 								<button type="button" className="btn btn-tool" data-card-widget="collapse" title="Collapse">
@@ -1425,7 +1536,11 @@ function Pengguna() {
 							<ReactDatatable
 								config={config}
 								records={values}
-								columns={roleID === '1' ? columns.filter((el) => el.key !== 'nomor_induk') : columns}
+								columns={
+									roleID === '1' ? columns.filter((el) => el.key !== 'nomor_induk' && el.key !== 'kelas' && el.key !== 'validasiAkun' && el.key !== 'mutationAkun') : 
+									roleID === '2' ? columns.filter((el) => el.key !== 'kelas' && el.key !== 'validasiAkun' && el.key !== 'mutationAkun') :
+									roleID === '3' && columns
+								}
 								extraButtons={extraButtons}
 								loading={loading}
 							/>
@@ -1503,11 +1618,7 @@ function Pengguna() {
 										</div>
 									}
 								</div>
-								{Editvalues.id ? 
-									<p className='keterangan'>NB: Jika ingin mengubah password aktifkan input password terlebih dahulu</p>
-									:
-									<p className='keterangan'>NB: Password sudah di generate acak</p>
-								}
+								<p className='keterangan'>NB: Password sudah di generate acak</p>
 							</div>
 							<div className='row'>
 								<div className='col-md-6'>
@@ -1615,6 +1726,12 @@ function Pengguna() {
 											isClearable
 										/>
 									</div>
+									{Jabatan && Jabatan.value === 'Wali Kelas' &&
+										<div className="form-group">
+											<label htmlFor="walikelas">Wali Kelas</label>
+											<input type="text" className="form-control" name='walikelas' placeholder="Wali Kelas" autoComplete="off" maxLength='3' value={Editvalues.walikelas} onChange={handleChange} />
+										</div>
+									}
 									<div className="form-group">
 										<label>Mengajar Bidang Studi</label>
 										<Select
@@ -2227,13 +2344,24 @@ function Pengguna() {
 								modal: 'customModal',
 							}}>
 							<div className="modal-header">
-								<h4 className="modal-title" id="my-modal-title">View {title}</h4>
+								<h4 className="modal-title" id="my-modal-title">
+									View {title} &nbsp;
+									{roleID === '3' &&
+										<button
+											className="btn btn-primary btn-xs"
+											title="PDF FILE"
+											onClick={() => PDFCreate(Lookvalues.id_profile)}
+											style={{marginRight: '5px'}}>
+											<i className="fa fa-file-pdf"></i> PDF FILE 
+										</button>
+									}
+								</h4>
 								<button onClick={() => setViewData(false)} className="close" aria-label="Close">
 									<span aria-hidden="true">×</span>
 								</button>
 							</div>
 							<div className="text-center">
-								<img className="profile-user-img img-fluid img-circle" src={Lookvalues.gambar ? `${env.SITE_URL}images/${Lookvalues.gambar}` : 'dist/img/user.png'} alt="User profile picture" />
+								<img className="profile-user-img img-fluid img-circle" src={Lookvalues.gambar ? `${env.SITE_URL}images/${Lookvalues.gambar}` : 'dist/img/user.png'} alt="User profile picture" style={{width: '100px', height: '100px'}} />
 							</div>
 							<br/>
 							<div className='row'>
@@ -2255,6 +2383,10 @@ function Pengguna() {
 								<div className='col-md-8'>: {Lookvalues.email ? Lookvalues.email : '-'}</div>
 							</div>
 							<div className='row'>
+								<div className='col-md-4'>Kata Sandi</div>
+								<div className='col-md-8'>: {Lookvalues.kodeOTP ? Lookvalues.kodeOTP + ' (Hanya administrator yang bisa melihat kata sandi ini)' : '-'}</div>
+							</div>
+							<div className='row'>
 								<div className='col-md-4'>Tempat, Tanggal Lahir</div>
 								<div className='col-md-8 capitalize'>: {Lookvalues.tempat ? Lookvalues.tempat : '-'}, {Lookvalues.tgl_lahir ? convertDate2(Lookvalues.tgl_lahir) : '-'}</div>
 							</div>
@@ -2270,7 +2402,7 @@ function Pengguna() {
 									</div>
 									<div className='row'>
 										<div className='col-md-4'>Jabatan</div>
-										<div className='col-md-8'>: {Jabatan ? Jabatan.label : '-'}</div>
+										<div className='col-md-8'>: {Jabatan ? Jabatan.label === 'Wali Kelas' ? Jabatan.label+' ('+Lookvalues.walikelas+')' : Jabatan.label : '-'}</div>
 									</div>
 									<div className='row'>
 										<div className='col-md-4'>Mengajar Bidang</div>
@@ -2497,7 +2629,7 @@ function Pengguna() {
 										</div>
 										Berkas :&nbsp;
 										{Lookvalues&&Lookvalues.fc_ijazah ? 
-											<a onClick={() => {setBerkas(Lookvalues.fc_ijazah); setviewBerkas(true);}} style={{cursor: 'pointer', color: 'blue'}}>FC Ijazah</a> : '-'
+											<a onClick={() => {setBerkas(Lookvalues.fc_ijazah); setviewBerkas({kondisi: true, bagian: 'berkas'});}} style={{cursor: 'pointer', color: 'blue'}}>FC Ijazah</a> : '-'
 										}
 										<p className="help-block">Maksimal File. 5MB</p>
 									</div>
@@ -2509,7 +2641,7 @@ function Pengguna() {
 										</div>
 										Berkas :&nbsp;
 										{Lookvalues&&Lookvalues.fc_kk ? 
-											<a onClick={() => {setBerkas(Lookvalues.fc_kk); setviewBerkas(true);}} style={{cursor: 'pointer', color: 'blue'}}>FC Kartu Keluarga</a> : '-'
+											<a onClick={() => {setBerkas(Lookvalues.fc_kk); setviewBerkas({kondisi: true, bagian: 'berkas'});}} style={{cursor: 'pointer', color: 'blue'}}>FC Kartu Keluarga</a> : '-'
 										}
 										<p className="help-block">Maksimal File. 5MB</p>
 									</div>
@@ -2521,7 +2653,7 @@ function Pengguna() {
 										</div>
 										Berkas :&nbsp;
 										{Lookvalues&&Lookvalues.fc_ktp_ortu ? 
-											<a onClick={() => {setBerkas(Lookvalues.fc_ktp_ortu); setviewBerkas(true);}} style={{cursor: 'pointer', color: 'blue'}}>FC KTP Orang Tua</a> : '-'
+											<a onClick={() => {setBerkas(Lookvalues.fc_ktp_ortu); setviewBerkas({kondisi: true, bagian: 'berkas'});}} style={{cursor: 'pointer', color: 'blue'}}>FC KTP Orang Tua</a> : '-'
 										}
 										<p className="help-block">Maksimal File. 5MB</p>
 									</div>
@@ -2533,7 +2665,7 @@ function Pengguna() {
 										</div>
 										Berkas :&nbsp;
 										{Lookvalues&&Lookvalues.fc_akta_lahir ? 
-											<a onClick={() => {setBerkas(Lookvalues.fc_akta_lahir); setviewBerkas(true);}} style={{cursor: 'pointer', color: 'blue'}}>FC Akta Lahir</a> : '-'
+											<a onClick={() => {setBerkas(Lookvalues.fc_akta_lahir); setviewBerkas({kondisi: true, bagian: 'berkas'});}} style={{cursor: 'pointer', color: 'blue'}}>FC Akta Lahir</a> : '-'
 										}
 										<p className="help-block">Maksimal File. 5MB</p>
 									</div>
@@ -2545,7 +2677,7 @@ function Pengguna() {
 										</div>
 										Berkas :&nbsp;
 										{Lookvalues&&Lookvalues.fc_skl ? 
-											<a onClick={() => {setBerkas(Lookvalues.fc_skl); setviewBerkas(true);}} style={{cursor: 'pointer', color: 'blue'}}>FC Surat Keterangan Lulus</a> : '-'
+											<a onClick={() => {setBerkas(Lookvalues.fc_skl); setviewBerkas({kondisi: true, bagian: 'berkas'});}} style={{cursor: 'pointer', color: 'blue'}}>FC Surat Keterangan Lulus</a> : '-'
 										}
 										<p className="help-block">Maksimal File. 5MB</p>
 									</div>
@@ -2553,7 +2685,7 @@ function Pengguna() {
 							}
 						</Modal>
 						<Modal 
-							open={viewBerkas} 
+							open={viewBerkas.kondisi} 
 							showCloseIcon={false}
 							closeOnOverlayClick={false}
 							classNames={{
@@ -2562,12 +2694,12 @@ function Pengguna() {
 							}}>
 							<div className="modal-header">
 								<h4 className="modal-title" id="my-modal-title">View Berkas</h4>
-								<button onClick={() => setviewBerkas(false)} className="close" aria-label="Close">
+								<button onClick={() => {setviewBerkas({kondisi: false, bagian: null}); setBerkas(null)}} className="close" aria-label="Close">
 									<span aria-hidden="true">×</span>
 								</button>
 							</div>
 							<iframe
-								src={`${env.SITE_URL}pdf/${Lookvalues.id_profile}/${Berkas}`}
+								src={viewBerkas.bagian === 'berkas' ? `${env.SITE_URL}pdf/${Lookvalues.id_profile}-${Lookvalues.nomor_induk}/${Berkas}` : `${Berkas}`}
 								type="application/pdf"
 								height={400}
 								width='100%'
