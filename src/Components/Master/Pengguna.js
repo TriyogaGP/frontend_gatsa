@@ -20,7 +20,10 @@ function Pengguna() {
 	const [Viewvalues, setViewValues] = useState({})
 	const [TanggalLahir, setTanggalLahir] = useState(null);
 	const [Mengajar, setMengajar] = useState(null);
+	const [MengajarArray, setMengajarArray] = useState([]);
+	const [MengajarKelasArray, setMengajarKelasArray] = useState([]);
 	const [Jabatan, setJabatan] = useState(null);
+	const [JabatanArray, setJabatanArray] = useState([]);
 	const [Agama, setAgama] = useState(null);
 	const [Hobi, setHobi] = useState(null);
 	const [CitaCita, setCitaCita] = useState(null);
@@ -46,6 +49,7 @@ function Pengguna() {
 	const [JarakRumah, setJarakRumah] = useState(null);
 	const [AlatTransportasi, setAlatTransportasi] = useState(null);
 	const [Kelas, setKelas] = useState(null);
+	const [WaliKelas, setWaliKelas] = useState(null);
 	const [Provinsi, setProvinsi] = useState([]);
 	const [KabupatenKotaOnly, setKabupatenKotaOnly] = useState([]);
 	const [KabupatenKota, setKabupatenKota] = useState([]);
@@ -251,6 +255,9 @@ function Pengguna() {
 		setKabupatenKota([])
 		setKecamatan([])
 		setKelurahan([])
+		setJabatanArray([])
+		setMengajarArray([])
+		setMengajarKelasArray([])
 		setLabel({})
 		setIsLoading({})
 	};
@@ -569,10 +576,10 @@ function Pengguna() {
 			pekerjaan_wali: roleID === '3' ? Pekerjaan.pekerjaan_wali ? Pekerjaan.pekerjaan_wali.value : null : null,
 			telp_wali: roleID === '3' ? Editvalues.telp_wali : null,
 			pendidikan_guru: roleID === '2' ? Pendidikan.pendidikan_guru ? Pendidikan.pendidikan_guru.value : null : null,
-			jabatan_guru: roleID === '2' ? Jabatan ? Jabatan.value : null : null,
-			mengajar_bidang: roleID === '2' ? Mengajar ? Mengajar.value : null : null,
-			mengajar_kelas: roleID === '2' ? Editvalues.mengajar_kelas : null,
-			walikelas: roleID === '2' && Jabatan && Jabatan.value === 'Wali Kelas' ? Editvalues.walikelas : null,
+			jabatan_guru: roleID === '2' ? JabatanArray ? JabatanArray.join(', ') : null : null,
+			mengajar_bidang: roleID === '2' ? MengajarArray ? MengajarArray.join(', ') : null : null,
+			mengajar_kelas: roleID === '2' ? MengajarKelasArray ? MengajarKelasArray.join(', ') : null : null,
+			walikelas: roleID === '2' && JabatanArray.includes("Wali Kelas") ? WaliKelas&&WaliKelas.label : null,
 		}
 		if(Object.entries(errors).length > 0) return ResponToast('error', 'Form masih ada yang kosong, tolong lengkapi terlebih dahulu. TerimaKasih')
 		// console.log(payload)
@@ -601,8 +608,13 @@ function Pengguna() {
 		if (e.target.checked === true) {
 			selectedRows.push(e.target.id);
     } else {
-			selectedRows.pop(e.target.id);
+			selectedRows.findIndex((element, key) => {
+				if(element === e.target.id){
+					delete selectedRows[key]
+				}
+			})
     }
+		console.log(selectedRows)
 	}
 
 	const selectAkun = async(e, jenis) => {
@@ -629,6 +641,7 @@ function Pengguna() {
 		// console.log("Edit Record", record);
 		setEditValues(record)
 		setPassBay(makeRandom(8))
+		getKelas()
 		getProvinsi()
 		getKabKotaOnly()
 		getKabKota(record.provinsi)
@@ -638,13 +651,17 @@ function Pengguna() {
 			value: record.agama,
 			label: record.agama,
 		})
-		setMengajar({
-			value: record.mengajar_bidang,
-			label: record.mengajar_bidang,
-		})
-		setJabatan({
-			value: record.jabatan_guru,
-			label: record.jabatan_guru,
+		// setMengajar({
+		// 	value: record.mengajar_bidang,
+		// 	label: record.mengajar_bidang,
+		// })
+		// setJabatan({
+		// 	value: record.jabatan_guru,
+		// 	label: record.jabatan_guru,
+		// })
+		setWaliKelas({
+			value: record.walikelas,
+			label: record.walikelas,
 		})
 		setFlag({
 			flagPassEdit: false,
@@ -655,6 +672,7 @@ function Pengguna() {
 				tahunwali: false,
 			},
 		})
+
 		setPasswordShown(false)
 		const citacita = optionsCitaCita.find(datacitacita => datacitacita.value === String(record.cita_cita));
 		const hobi = optionsHobi.find(datahobi => datahobi.value === String(record.hobi));
@@ -673,6 +691,12 @@ function Pengguna() {
 		const statustempattinggal = optionsStatusTempatTinggal.find(datastatustempattinggal => datastatustempattinggal.value === String(record.status_tempat_tinggal));
 		const jarakrumah = optionsJarakRumah.find(datajarakrumah => datajarakrumah.value === String(record.jarak_rumah));
 		const transportasi = optionsAlatTransportasi.find(datatransportasi => datatransportasi.value === String(record.transportasi));
+		const jabatan_guru = String(record.jabatan_guru).split(', ')
+		const mengajar_bidang = String(record.mengajar_bidang).split(', ')
+		const mengajar_kelas = String(record.mengajar_kelas).split(', ')
+		setJabatanArray(jabatan_guru)
+		setMengajarArray(mengajar_bidang)
+		setMengajarKelasArray(mengajar_kelas)
 		setHobi({
 				value: hobi ? hobi.value : null,
 				label: hobi ? hobi.label : null,
@@ -949,6 +973,12 @@ function Pengguna() {
 		})
 	}
 
+	const handleChangeArray = (e, kondisi) => {
+		if(kondisi === 'Jabatan') {setJabatanArray(Array.isArray(e) ? e.map(x => x.value) : []);}		
+		if(kondisi === 'Mengajar_Bidang') {setMengajarArray(Array.isArray(e) ? e.map(x => x.value) : []);}		
+		if(kondisi === 'Mengajar_Kelas') {setMengajarKelasArray(Array.isArray(e) ? e.map(x => x.value) : []);}		
+	}
+
 	const ResponToast = (icon, msg) => {
     Swal.fire({  
       title: 'Pemberitahuan',  
@@ -1149,7 +1179,7 @@ function Pengguna() {
 			text: `${roleID === '3' ? 'NISN' : roleID === '2' && 'NIP' }`,
 			className: "nomor_induk",
 			align: "center",
-			width: '15%',
+			width: `${roleID === '3' ? '10%' : roleID === '2' && '15%' }`,
 			sortable: true,
 		},
 		{
@@ -1157,7 +1187,7 @@ function Pengguna() {
 			text: "Nama Lengkap",
 			className: "name",
 			align: "center",
-			width: '15%',
+			width: '20%',
 			cell: record => { 
 				return (
 					<Fragment>
@@ -1488,8 +1518,8 @@ function Pengguna() {
 		{ value: 'Wali Kelas', label: 'Wali Kelas' },
 		{ value: 'BP / BK', label: 'BP / BK' },
 		{ value: 'Pembina Osis', label: 'Pembina Osis' },
-		{ value: 'Pembina Extrakurikuler', label: 'Pembina Extrakurikuler' },
-		{ value: 'Kebersihan', label: 'Kebersihan' },
+		{ value: 'Pembina Pramuka', label: 'Pembina Pramuka' },
+		{ value: 'Pembina Paskibra', label: 'Pembina Paskibra' },
 	]
 
 	return (
@@ -1718,33 +1748,57 @@ function Pengguna() {
 									</div>
 									<div className="form-group">
 										<label>Jabatan</label>
-										<Select
+										{/* <Select
 											placeholder='Pilih Jabatan'
 											value={Jabatan}
 											onChange={(x) => {setJabatan(x)}}
 											options={optionsJabatan}
 											isClearable
+										/> */}
+										<Select
+											placeholder='Pilih Jabatan'
+											value={optionsJabatan.filter(obj => JabatanArray.includes(obj.value))}
+											onChange={(x) => {handleChangeArray(x, 'Jabatan')}}
+											options={optionsJabatan}
+											isClearable
+											isMulti
 										/>
 									</div>
-									{Jabatan && Jabatan.value === 'Wali Kelas' &&
+									{JabatanArray.includes("Wali Kelas") &&
 										<div className="form-group">
 											<label htmlFor="walikelas">Wali Kelas</label>
-											<input type="text" className="form-control" name='walikelas' placeholder="Wali Kelas" autoComplete="off" maxLength='3' value={Editvalues.walikelas} onChange={handleChange} />
+											{/* <input type="text" className="form-control" name='walikelas' placeholder="Wali Kelas" autoComplete="off" maxLength='3' value={Editvalues.walikelas} onChange={handleChange} /> */}
+											<Select
+												placeholder='Pilih Kelas'
+												value={WaliKelas}
+												onChange={(x) => {setWaliKelas(x)}}
+												options={PilihKelas}
+												isClearable
+											/>
 										</div>
 									}
 									<div className="form-group">
 										<label>Mengajar Bidang Studi</label>
 										<Select
 											placeholder='Pilih Mengajar'
-											value={Mengajar}
-											onChange={(x) => {setMengajar(x)}}
+											value={optionsMengajar.filter(obj => MengajarArray.includes(obj.value))}
+											onChange={(x) => {handleChangeArray(x, 'Mengajar_Bidang')}}
 											options={optionsMengajar}
 											isClearable
+											isMulti
 										/>
 									</div>
 									<div className="form-group">
 										<label htmlFor="mengajar_kelas">Mengajar Kelas</label>
-										<input type="text" className="form-control" name='mengajar_kelas' placeholder="Mengajar Kelas" autoComplete="off" value={Editvalues.mengajar_kelas} onChange={handleChange} />
+										{/* <input type="text" className="form-control" name='mengajar_kelas' placeholder="Mengajar Kelas" autoComplete="off" value={Editvalues.mengajar_kelas} onChange={handleChange} /> */}
+										<Select
+											placeholder='Pilih Kelas'
+											value={PilihKelas.filter(obj => MengajarKelasArray.includes(obj.value))}
+											onChange={(x) => {handleChangeArray(x, 'Mengajar_Kelas')}}
+											options={PilihKelas}
+											isClearable
+											isMulti
+										/>
 									</div>
 								</>
 							}

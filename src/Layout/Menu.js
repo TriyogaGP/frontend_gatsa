@@ -6,7 +6,9 @@ import env from 'react-dotenv'
 function Menu(props) {
 	const gbr = props.dataUser.codeLog === 1 ? props.dataUser.gambar != null ? `${env.SITE_URL}images/${props.dataUser.gambar}` : 'dist/img/user.png' : props.dataUser.codeLog === 2 ? props.dataUser.gambarGmail : 'dist/img/user.png';	
 	const mengajarKelas = String(props.dataUser.mengajar_kelas)
+	const JabatanGuru = String(props.dataUser.jabatan_guru)
 	let myArray = mengajarKelas.split(', ').sort()
+	let jabatanArray = JabatanGuru.split(', ').filter(jabatan => jabatan === 'Wali Kelas')
 	const [Kelas7, setKelas7] = useState([]);
 	const [Kelas8, setKelas8] = useState([]);
 	const [Kelas9, setKelas9] = useState([]);
@@ -128,7 +130,7 @@ function Menu(props) {
 							}
 							{props.roleID === '2' &&
 								<>
-									{props.dataUser.jabatan_guru === 'Wali Kelas' && 
+									{jabatanArray[0] === 'Wali Kelas' && 
 										<li className="nav-item">
 											<Link to={`/kelassiswa?page=${props.dataUser.walikelas}`} className="nav-link">
 												<i className="far fa-user nav-icon" />
@@ -151,6 +153,12 @@ function Menu(props) {
 												</li>
 											))}
 										</ul>
+									</li>
+									<li className="nav-item">
+										<Link to="/penilaian" className='nav-link'>
+											<i className="nav-icon fas fa-file" />
+											<p> Penilaian</p>
+										</Link>
 									</li>
 								</>
 							}

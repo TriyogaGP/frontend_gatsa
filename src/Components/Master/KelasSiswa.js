@@ -35,6 +35,7 @@ function KelasSiswa() {
 			setLoading(false)
 			setValues(response.data.data);
 		} catch (error) {
+			setLoading(false)
 			console.log(error.response.data)
 			ResponToast('error', error.response.data.message)
 		}

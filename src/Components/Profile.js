@@ -50,7 +50,18 @@ function Profile(props) {
 		load_kelurahan: false
 	});
 	const gbr = values.codeLog === 1 ? values.gambar != null ? `${env.SITE_URL}images/${values.gambar}` : 'dist/img/user.png' : values.codeLog === 2 ? values.gambarGmail : 'dist/img/user.png';
-
+	const mengajarKelas = String(values.mengajar_kelas)
+	const mengajarBidang = String(values.mengajar_bidang)
+	const JabatanGuru = String(values.jabatan_guru)
+	let MengajarKelas = mengajarKelas.split(', ').sort()
+	let MengajarBidang = mengajarBidang.split(', ').sort()
+	let hasilJabatan
+	let jabatanArray = JabatanGuru.split(', ').sort().map((value, key) => {
+		if(value === "Wali Kelas"){
+			hasilJabatan = JabatanGuru.split(', ').sort().fill("Wali Kelas "+values.walikelas, key)
+		}
+	})
+	let jabatanGuru = hasilJabatan && hasilJabatan.join(', ')
 	useEffect(() => {
 		getData()
 	},[])
@@ -625,26 +636,7 @@ function Profile(props) {
 										{flag.flagNama === false &&
 											<h3 className="profile-username text-center">{LowerCase(values.name)} {values.roleID !== 3 && <i onClick={() => {ubahKondisiData(true, 'nama')}} className="fas fa-pencil-alt" style={{cursor: 'pointer'}} />}</h3>
 										}
-										<p className="text-muted text-center">{values.roleName} 
-										{values.roleID === 2 && ' ('+values.mengajar_bidang+')'}
-										<br/><b>{values.roleID === 2 && values.jabatan_guru}</b>	
-										{values.roleID === 3 && (`
-											(${values.kelas})
-										`)}
-										</p>
-										{values.roleID !== 1 &&
-											<ul className="list-group list-group-unbordered mb-3">
-												<li className="list-group-item">
-													<b>Pengikut</b> <a className="float-right">1,322</a>
-												</li>
-												<li className="list-group-item">
-													<b>Mengikuti</b> <a className="float-right">543</a>
-												</li>
-												<li className="list-group-item">
-													<b>Teman</b> <a className="float-right">13,287</a>
-												</li>
-											</ul>
-										}
+										<p className="text-muted text-center">{values.roleName}<br/><b>{jabatanGuru ? jabatanGuru : values.jabatan_guru}</b></p>
 										<div className="form-group" style={values.codeLog === 1 ? {display: 'block'} : {display: 'none'}}>
 											<div className="btn btn-default btn-file btn-block">
 												<i className="fas fa-paperclip" /> Ubah Foto Profile
@@ -656,6 +648,38 @@ function Profile(props) {
 										<a onClick={keluar} className="btn btn-primary btn-block"><b>Keluar</b></a>
 									</div>
 								</div>
+								{values.roleID === 2 &&
+									<>
+										<div className="card card-primary card-outline">
+											<div className="card-header">
+												<h3 className="card-title">Mata Pelajaran yang diajar</h3>
+											</div>
+											<div className="card-body">
+												<ul className='text-muted list-group list-group-unbordered mb-2'>	
+													{values.roleID === 2 && 
+														MengajarBidang.map(element => (
+															<li style={{marginLeft: '20px'}} key={element}><b>{element}</b></li>
+														))
+													}
+												</ul>
+											</div>
+										</div>
+										<div className="card card-primary card-outline">
+											<div className="card-header">
+												<h3 className="card-title">Kelas yang diajar</h3>
+											</div>
+											<div className="card-body">
+												<ul className='text-muted list-group list-group-unbordered mb-2'>	
+													{values.roleID === 2 && 
+														MengajarKelas.map(element => (
+															<li style={{marginLeft: '20px'}} key={element}><b>{element}</b></li>
+														))
+													}
+												</ul>
+											</div>
+										</div>
+									</>
+								}
 								<div className="card card-primary card-outline">
 									<div className="card-header">
 										<h3 className="card-title">Tentang Saya</h3>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router';
 import axios from 'axios';
 import jwt_decode from "jwt-decode";
@@ -6,19 +7,22 @@ import env from "react-dotenv";
 
 function Dashboard(props) {
 	const roleID = localStorage.getItem('roleID')
+	const idProfile = localStorage.getItem('idProfile')
 	const [expire, setExpire] = useState('');
-	const [TotalData, setTotalData] = useState({});
+	const [TotalDataArray, setTotalDataArray] = useState([]);
+	const [TotalDataObject, setTotalDataObject] = useState({});
 	const navigate = useNavigate();
 
 	useEffect(() => {
-		getData()
-	},[])
+		getData(roleID, idProfile)
+	},[roleID, idProfile])
 
-	const getData = async(role) => {
+	const getData = async(roleID, idProfile) => {
+		const kode = roleID === '1' ? 'admin' : 'guru' 
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleuser/dataDashboard`);
-			// console.log(response.data.data)
-			setTotalData(response.data.totalData);
+			const response = await axios.get(`${env.SITE_URL}restApi/moduleuser/dataDashboard?kode=${kode}&id_profile=${idProfile}`);
+			if(kode === 'admin') { setTotalDataObject(response.data.totalData); }
+			else if(kode === 'guru') { setTotalDataArray(response.data.totalData); }
 		} catch (error) {
 			console.log(error.response.data)
 		}
@@ -51,6 +55,11 @@ function Dashboard(props) {
 							</ol>
 						</div>
 					</div>
+					<div className='row'>
+						<div className='col-sm-12'>
+							<h6 className='float-sm-right'>Selamat Datang, {localStorage.getItem('namaLengkap')}</h6>
+						</div>
+					</div>
 				</div>
 			</section>
 
@@ -60,8 +69,8 @@ function Dashboard(props) {
 						<div className="col-lg-3 col-6">
 							<div className="small-box bg-success">
 								<div className="inner">
-									<h3>{TotalData.dataSiswaPria}</h3>
-									<p><b>Siswa/i</b><br/>Jenis Kelamin : Laki - Laki (Aktif)</p>
+									<h3>{TotalDataObject.dataSiswaPria}</h3>
+									<p><b>Siswa</b><br/>Jenis Kelamin : Laki - Laki (Aktif)</p>
 								</div>
 								<div className="icon"><i className="fas fa-users" /></div>
 								<a href="#" className="small-box-footer">More info <i className="fas fa-arrow-circle-right" /></a>
@@ -70,8 +79,8 @@ function Dashboard(props) {
 						<div className="col-lg-3 col-6">
 							<div className="small-box bg-success">
 								<div className="inner">
-									<h3>{TotalData.dataSiswaWanita}</h3>
-									<p><b>Siswa/i</b><br/>Jenis Kelamin : Perempuan (Aktif)</p>
+									<h3>{TotalDataObject.dataSiswaWanita}</h3>
+									<p><b>Siswi</b><br/>Jenis Kelamin : Perempuan (Aktif)</p>
 								</div>
 								<div className="icon"><i className="fas fa-users" /></div>
 								<a href="#" className="small-box-footer">More info <i className="fas fa-arrow-circle-right" /></a>
@@ -80,7 +89,7 @@ function Dashboard(props) {
 						<div className="col-lg-3 col-6">
 							<div className="small-box bg-warning">
 								<div className="inner">
-									<h3>{TotalData.dataSiswaMutasi}</h3>
+									<h3>{TotalDataObject.dataSiswaMutasi}</h3>
 									<p><b>Siswa/i</b><br/>(Mutasi)</p>
 								</div>
 								<div className="icon"><i className="fas fa-users" /></div>
@@ -90,7 +99,7 @@ function Dashboard(props) {
 						<div className="col-lg-3 col-6">
 							<div className="small-box bg-primary">
 								<div className="inner">
-									<h3>{TotalData.dataGuru}</h3>
+									<h3>{TotalDataObject.dataGuru}</h3>
 									<p><br/>Guru / Pegawai (Aktif)</p>
 								</div>
 								<div className="icon"><i className="fas fa-users" /></div>
@@ -99,11 +108,27 @@ function Dashboard(props) {
 						</div>
 					</div>
 				}
-				<div className="card">
+				{roleID === '2' &&
+					<div className='row'>
+						{TotalDataArray && TotalDataArray.map(value => (
+							<div className="col-lg-3 col-6" key={value.kelas}>
+								<div className="small-box bg-success">
+									<div className="inner">
+										<h3>{value.jumlahSiswa}</h3>
+										<p><b>Siswa/i Kelas {value.kelas}</b></p>
+									</div>
+									<div className="icon"><i className="fas fa-users" /></div>
+									<Link to={`/kelassiswa?page=${value.kelas}`} className="small-box-footer">More info <i className="fas fa-arrow-circle-right" /></Link>
+								</div>
+							</div>
+						))}
+					</div>
+				}
+				{/* <div className="card">
 					<div className="card-body">
 						<h2>SELAMAT DATANG</h2>
 					</div>
-				</div>				
+				</div>				 */}
 			</section>
 		</div>
 	)
