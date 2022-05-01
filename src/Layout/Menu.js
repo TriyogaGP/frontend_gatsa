@@ -6,9 +6,12 @@ import env from 'react-dotenv'
 function Menu(props) {
 	const gbr = props.dataUser.codeLog === 1 ? props.dataUser.gambar != null ? `${env.SITE_URL}images/${props.dataUser.gambar}` : 'dist/img/user.png' : props.dataUser.codeLog === 2 ? props.dataUser.gambarGmail : 'dist/img/user.png';	
 	const mengajarKelas = String(props.dataUser.mengajar_kelas)
+	const Kelas = props.dataUser.mengajar_bidang
+	const Bidang = props.dataUser.mengajar_bidang
 	const JabatanGuru = String(props.dataUser.jabatan_guru)
 	let myArray = mengajarKelas.split(', ').sort()
 	let jabatanArray = JabatanGuru.split(', ').filter(jabatan => jabatan === 'Wali Kelas')
+	let jabatanKepsek = JabatanGuru.split(', ').filter(jabatan => jabatan === 'Kepala Sekolah')
 	const [Kelas7, setKelas7] = useState([]);
 	const [Kelas8, setKelas8] = useState([]);
 	const [Kelas9, setKelas9] = useState([]);
@@ -111,7 +114,7 @@ function Menu(props) {
 												<p> Data Akademis <i className="right fas fa-angle-left" /></p>
 											</a>
 											<ul className="nav nav-treeview">
-												<li className="nav-item">
+												{/* <li className="nav-item">
 													<Link to="/kelas" className="nav-link">
 														<i className="fas fa-archive nav-icon" />
 														<p> Data Kelas</p>
@@ -122,11 +125,33 @@ function Menu(props) {
 														<i className="fas fa-archive nav-icon" />
 														<p> Data Kelas Siswa</p>
 													</Link>
+												</li> */}
+												<li className="nav-item">
+													<Link to="/jadwalngajar" className="nav-link">
+														<i className="fas fa-archive nav-icon" />
+														<p> Data Jadwal Mengajar</p>
+													</Link>
 												</li>
 											</ul>
 										</li>
 									</ul>
 								</li>
+							}
+							{props.roleID === '1' &&
+								<>
+									{/* <li className="nav-item">
+										<Link to="/dashboard" className='nav-link'>
+											<i className="nav-icon fas fa-eye" />
+											<p> Aktifkan Berkas</p>
+										</Link>
+									</li>
+									<li className="nav-item">
+										<Link to="/dashboard" className='nav-link'>
+											<i className="nav-icon fas fa-eye-slash" />
+											<p> Nonaktifkan Berkas</p>
+										</Link>
+									</li> */}
+								</>
 							}
 							{props.roleID === '2' &&
 								<>
@@ -138,28 +163,32 @@ function Menu(props) {
 											</Link>
 										</li>
 									}
-									<li className="nav-item">
-										<a className="nav-link" style={{cursor: 'pointer'}}>
-											<i className="nav-icon fas fa-key" />
-											<p> Kelas <i className="right fas fa-angle-left" /></p>
-										</a>
-										<ul className="nav nav-treeview">
-											{myArray.map(kelas => (  
-												<li className="nav-item" key={kelas}>
-													<Link to={`/kelassiswa?page=${kelas}`} className="nav-link">
-														<i className="far fa-user nav-icon" />
-														<p> Kelas {kelas}</p>
-													</Link>
-												</li>
-											))}
-										</ul>
-									</li>
-									<li className="nav-item">
-										<Link to="/penilaian" className='nav-link'>
-											<i className="nav-icon fas fa-file" />
-											<p> Penilaian</p>
-										</Link>
-									</li>
+									{jabatanKepsek[0] !== 'Kepala Sekolah' && Kelas !== null && Bidang !== null &&
+										<>
+											<li className="nav-item">
+												<a className="nav-link" style={{cursor: 'pointer'}}>
+													<i className="nav-icon fas fa-key" />
+													<p> Kelas <i className="right fas fa-angle-left" /></p>
+												</a>
+												<ul className="nav nav-treeview">
+													{myArray.map(kelas => (  
+														<li className="nav-item" key={kelas}>
+															<Link to={`/kelassiswa?page=${kelas}`} className="nav-link">
+																<i className="far fa-user nav-icon" />
+																<p> Kelas {kelas}</p>
+															</Link>
+														</li>
+													))}
+												</ul>
+											</li>
+											<li className="nav-item">
+												<Link to="/penilaian" className='nav-link'>
+													<i className="nav-icon fas fa-file" />
+													<p> Penilaian</p>
+												</Link>
+											</li>
+										</>
+									}
 								</>
 							}
 							{/* <ul className="nav nav-treeview">

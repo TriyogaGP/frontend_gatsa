@@ -27,11 +27,7 @@ function Lockscreen() {
 	},[])
 
 	const getData = async() => {
-		const response = await axios.get(`${env.SITE_URL}restApi/moduleLogin/getuserslock/${localStorage.getItem('idProfile')}`, {
-			headers: {
-				Authorization: `Bearer ${localStorage.getItem('access_token')}`
-			}
-		});
+		const response = await axios.get(`${env.SITE_URL}restApi/moduleLogin/getuserslock/${localStorage.getItem('idProfile')}`);
 		setData(response.data.data);
 	}
 

@@ -8,6 +8,8 @@ import "react-datepicker/dist/react-datepicker.css";
 import ReactDatatable from '@ashvin27/react-datatable';
 import 'react-responsive-modal/styles.css';
 import { Modal } from 'react-responsive-modal';
+import { EditText } from 'react-edit-text';
+import 'react-edit-text/dist/index.css';
 import env from "react-dotenv";
 import Swal from "sweetalert2";
 
@@ -19,8 +21,12 @@ function Penilaian(props) {
 	const [EditValues, setEditValues] = useState({});
 	const [Mapel, setMapel] = useState(null);
 	const [Kelas, setKelas] = useState(null);
+	const [Nilai, setNilai] = useState(null);
+	const [Contoh, setContoh] = useState('');
+	const [DataTugas, setDataTugas] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const [FlagUbahNilai, setFlagUbahNilai] = useState(false);
+	const [FlagTombol, setFlagTombol] = useState(false);
 	const navigate = useNavigate();
 	const { search } = useLocation();
 	
@@ -34,13 +40,16 @@ function Penilaian(props) {
 			}, 2000);
 		}else{
 			setLoading(false)
+			setFlagTombol(true)
 			setDataNilai([])
 		}
 	},[Mapel, Kelas])
 	
 	useEffect(() => {
+		setNilai(null)
 		setKelas(null)
 		setMapel(null)
+		setDataNilai([])
 		getData()
 	},[])
 
@@ -70,6 +79,7 @@ function Penilaian(props) {
 	const getNilai = async(mapel, kelas) => {
 		try {
 			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/penilaian?mapel=${mapel}&kelas=${kelas}`);
+			if(response.data.data.length > 0){ setFlagTombol(false) }else{ setFlagTombol(true) }
 			setLoading(false)
 			setDataNilai(response.data.data);
 		} catch (error) {
@@ -80,13 +90,62 @@ function Penilaian(props) {
 		
 	}
 
-	const SimpanNilai = () => {
+	const SimpanNilai = async() => {
     toggleUbahNilai(!FlagUbahNilai)
+		const payload = {
+			mapel: Mapel&&Mapel.label, 
+			triggerUbah: Nilai&&Nilai.value,
+			ubahNilai: DataTugas
+		}
+		// console.log(payload)
+		setDataNilai([])
+		try {
+			const simpan = await axios.post(`${env.SITE_URL}restApi/moduleUser/ubahPenilaian`, payload); 
+			setNilai(null)
+			setDataTugas([])
+			setLoading(true)
+			getNilai(Mapel&&Mapel.label, Kelas&&Kelas.label)
+			ResponToast('success', simpan.data.message)
+		} catch (error) {
+			if(error.response){
+				const message = error.response.data.message
+				setNilai(null)
+				setKelas(null)
+				setMapel(null)
+				setDataTugas([])
+				ResponToast('error', message)
+			}
+		}
   }
+
+	const BatalSimpan = () => {
+    toggleUbahNilai(!FlagUbahNilai)
+		setDataTugas([])
+		setNilai(null)
+	}
 
 	const toggleUbahNilai = (aksi) => {
     setFlagUbahNilai(aksi);
   }
+
+	const handleSave = (data) => {
+		// console.log(data)
+		DataTugas.map((value, key) => {
+			if(String(value.id_profile) === data.name){
+				DataTugas.splice(key, 1, {id_profile: data.name, nilai: data.value})
+			}
+		})
+		// console.log(DataTugas)
+	};
+
+	const UbahNilai = () => {
+		toggleUbahNilai(!FlagUbahNilai)
+		let dataKumpul = new Array()
+		DataNilai.map(value => {
+			dataKumpul.push({id_profile: value.id, nilai: ''})
+		})
+		setDataTugas(dataKumpul)
+	}
 
 	const ResponToast = (icon, msg) => {
 		Swal.fire({  
@@ -116,6 +175,10 @@ function Penilaian(props) {
 	const LowerCase = (str) => {
 		const kata = String(str)
 		return kata.split(' ').map(i => i[0].toUpperCase() + i.substring(1).toLowerCase()).join(' ')
+	}
+
+	const minmax = (val, min, max) => {
+    return val > max ? max : val < min ? min : val;
 	}
 
 	const columns = [
@@ -156,24 +219,266 @@ function Penilaian(props) {
 			}
 		},
 		{
-			key: "nilai",
-			text: "Nilai",
-			className: "nilai",
+			key: "n_tugas1",
+			text: "Tugas I",
+			className: "n_tugas1",
 			width: '7%',
 			align: "center",
 			cell: record => { 
 				return (
-					<Fragment>
-						<div style={{textAlign: 'center'}}>
-							{!FlagUbahNilai ? 
-								(record.kelas ? record.kelas : '-')
-							:
-								<div className="form-group">
-									<input type="text" className="form-control" name={"nilai"+record.kelas} value={record.kelas} autoComplete="off" maxLength="20" value={record.kelas} onChange={(e) => e.target.name} />
-								</div>
-							}
-						</div>
-					</Fragment>
+					<div style={{textAlign: 'center'}}>
+						{FlagUbahNilai && Nilai&&Nilai.value === 'Tugas 1' ? 
+							<EditText
+								className='form-control-nilai'
+								name={String(record.id)}
+								onSave={handleSave}
+							/>
+						:
+							(record.n_tugas1 ? record.n_tugas1 : 0)
+						}
+					</div>
+				);
+			}
+		},
+		{
+			key: "n_tugas2",
+			text: "Tugas II",
+			className: "n_tugas2",
+			width: '7%',
+			align: "center",
+			cell: record => { 
+				return (
+					<div style={{textAlign: 'center'}}>
+						{FlagUbahNilai && Nilai&&Nilai.value === 'Tugas 2' ? 
+							<EditText
+								className='form-control-nilai'
+								name={String(record.id)}
+								onSave={handleSave}
+							/>
+						:
+							(record.n_tugas2 ? record.n_tugas2 : 0)
+						}
+					</div>
+				);
+			}
+		},
+		{
+			key: "n_tugas3",
+			text: "Tugas III",
+			className: "n_tugas3",
+			width: '7%',
+			align: "center",
+			cell: record => { 
+				return (
+					<div style={{textAlign: 'center'}}>
+						{FlagUbahNilai && Nilai&&Nilai.value === 'Tugas 3' ? 
+							<EditText
+								className='form-control-nilai'
+								name={String(record.id)}
+								onSave={handleSave}
+							/>
+						:
+							(record.n_tugas3 ? record.n_tugas3 : 0)
+						}
+					</div>
+				);
+			}
+		},
+		{
+			key: "n_tugas4",
+			text: "Tugas IV",
+			className: "n_tugas4",
+			width: '7%',
+			align: "center",
+			cell: record => { 
+				return (
+					<div style={{textAlign: 'center'}}>
+						{FlagUbahNilai && Nilai&&Nilai.value === 'Tugas 4' ? 
+							<EditText
+								className='form-control-nilai'
+								name={String(record.id)}
+								onSave={handleSave}
+							/>
+						:
+							(record.n_tugas4 ? record.n_tugas4 : 0)
+						}
+					</div>
+				);
+			}
+		},
+		{
+			key: "n_tugas5",
+			text: "Tugas V",
+			className: "n_tugas5",
+			width: '7%',
+			align: "center",
+			cell: record => { 
+				return (
+					<div style={{textAlign: 'center'}}>
+						{FlagUbahNilai && Nilai&&Nilai.value === 'Tugas 5' ? 
+							<EditText
+								className='form-control-nilai'
+								name={String(record.id)}
+								onSave={handleSave}
+							/>
+						:
+							(record.n_tugas5 ? record.n_tugas5 : 0)
+						}
+					</div>
+				);
+			}
+		},
+		{
+			key: "n_tugas6",
+			text: "Tugas VI",
+			className: "n_tugas6",
+			width: '7%',
+			align: "center",
+			cell: record => { 
+				return (
+					<div style={{textAlign: 'center'}}>
+						{FlagUbahNilai && Nilai&&Nilai.value === 'Tugas 6' ? 
+							<EditText
+								className='form-control-nilai'
+								name={String(record.id)}
+								onSave={handleSave}
+							/>
+						:
+							(record.n_tugas6 ? record.n_tugas6 : 0)
+						}
+					</div>
+				);
+			}
+		},
+		{
+			key: "n_tugas7",
+			text: "Tugas VII",
+			className: "n_tugas7",
+			width: '7%',
+			align: "center",
+			cell: record => { 
+				return (
+					<div style={{textAlign: 'center'}}>
+						{FlagUbahNilai && Nilai&&Nilai.value === 'Tugas 7' ? 
+							<EditText
+								className='form-control-nilai'
+								name={String(record.id)}
+								onSave={handleSave}
+							/>
+						:
+							(record.n_tugas7 ? record.n_tugas7 : 0)
+						}
+					</div>
+				);
+			}
+		},
+		{
+			key: "n_tugas8",
+			text: "Tugas VIII",
+			className: "n_tugas8",
+			width: '7%',
+			align: "center",
+			cell: record => { 
+				return (
+					<div style={{textAlign: 'center'}}>
+						{FlagUbahNilai && Nilai&&Nilai.value === 'Tugas 8' ? 
+							<EditText
+								className='form-control-nilai'
+								name={String(record.id)}
+								onSave={handleSave}
+							/>
+						:
+							(record.n_tugas8 ? record.n_tugas8 : 0)
+						}
+					</div>
+				);
+			}
+		},
+		{
+			key: "n_tugas9",
+			text: "Tugas IX",
+			className: "n_tugas9",
+			width: '7%',
+			align: "center",
+			cell: record => { 
+				return (
+					<div style={{textAlign: 'center'}}>
+						{FlagUbahNilai && Nilai&&Nilai.value === 'Tugas 9' ? 
+							<EditText
+								className='form-control-nilai'
+								name={String(record.id)}
+								onSave={handleSave}
+							/>
+						:
+							(record.n_tugas9 ? record.n_tugas9 : 0)
+						}
+					</div>
+				);
+			}
+		},
+		{
+			key: "n_tugas10",
+			text: "Tugas X",
+			className: "n_tugas10",
+			width: '7%',
+			align: "center",
+			cell: record => { 
+				return (
+					<div style={{textAlign: 'center'}}>
+						{FlagUbahNilai && Nilai&&Nilai.value === 'Tugas 10' ? 
+							<EditText
+								className='form-control-nilai'
+								name={String(record.id)}
+								onSave={handleSave}
+							/>
+						:
+							(record.n_tugas10 ? record.n_tugas10 : 0)
+						}
+					</div>
+				);
+			}
+		},
+		{
+			key: "n_uts",
+			text: "UTS",
+			className: "n_uts",
+			width: '7%',
+			align: "center",
+			cell: record => { 
+				return (
+					<div style={{textAlign: 'center'}}>
+						{FlagUbahNilai && Nilai&&Nilai.value === 'UTS' ? 
+							<EditText
+								className='form-control-nilai'
+								name={String(record.id)}
+								onSave={handleSave}
+							/>
+						:
+							(record.n_uts ? record.n_uts : 0)
+						}
+					</div>
+				);
+			}
+		},
+		{
+			key: "n_uas",
+			text: "UAS",
+			className: "n_uas",
+			width: '7%',
+			align: "center",
+			cell: record => { 
+				return (
+					<div style={{textAlign: 'center'}}>
+						{FlagUbahNilai && Nilai&&Nilai.value === 'UAS' ? 
+							<EditText
+								className='form-control-nilai'
+								name={String(record.id)}
+								onSave={handleSave}
+							/>
+						:
+							(record.n_uas ? record.n_uas : 0)
+						}
+					</div>
 				);
 			}
 		},
@@ -181,8 +486,8 @@ function Penilaian(props) {
 
 	const config = {
 		key_column: 'name',
-		page_size: 10,
-		length_menu: [ 10, 20, 50 ],
+		page_size: 50,
+		length_menu: [ 50 ],
 		pagination: 'advance',
 		language: {
 			loading_text: "Harap Menunggu ...",
@@ -227,6 +532,21 @@ function Penilaian(props) {
 				console.log("doubleClick")
 			}
 		},
+	]
+
+	const optionsNilai = [
+		{ value: 'Tugas 1', label: 'Tugas 1' },
+		{ value: 'Tugas 2', label: 'Tugas 2' },
+		{ value: 'Tugas 3', label: 'Tugas 3' },
+		{ value: 'Tugas 4', label: 'Tugas 4' },
+		{ value: 'Tugas 5', label: 'Tugas 5' },
+		{ value: 'Tugas 6', label: 'Tugas 6' },
+		{ value: 'Tugas 7', label: 'Tugas 7' },
+		{ value: 'Tugas 8', label: 'Tugas 8' },
+		{ value: 'Tugas 9', label: 'Tugas 9' },
+		{ value: 'Tugas 10', label: 'Tugas 10' },
+		{ value: 'UTS', label: 'UTS' },
+		{ value: 'UAS', label: 'UAS' },
 	]
 
   return (
@@ -294,15 +614,31 @@ function Penilaian(props) {
 							</div>
 							<hr style={{border: 'solid 1px #000', marginBottom: '30px'}} />
 							<div className='row'>
-								<div className='col-sm-12 mb-4'>
+								<div className='col-sm-8 mb-4'></div>
+								<div className='col-sm-4 mb-4'>
 									{!FlagUbahNilai ? 
-										<button className="btn btn-primary btn-xs float-sm-right" title="Ubah Data" onClick={() => {toggleUbahNilai(!FlagUbahNilai)}}>
-											<i className="fa fa-pencil-alt"></i> Ubah Nilai 
-										</button>
+										<>
+											<button className="btn btn-primary btn-lg float-sm-right" title="Ubah Data" disabled={FlagTombol} onClick={() => UbahNilai()}>
+												<i className="fa fa-pencil-alt"></i> Ubah Nilai 
+											</button>
+											<Select
+												className='float-sm-right mr-2'
+												placeholder='Pilih Nilai'
+												value={Nilai}
+												onChange={(x) => {setNilai(x);}}
+												options={optionsNilai}
+												isClearable
+											/>
+										</>
 									:
-										<button className="btn btn-primary btn-xs float-sm-right" title="Ubah Data" onClick={SimpanNilai}>
-											<i className="fa fa-save"></i> Simpan Nilai
-										</button>
+										<>
+											<button className="btn btn-primary btn-lg float-sm-right" title="Batal Simpan" disabled={FlagTombol} onClick={BatalSimpan}>
+												<i className="fa fa-clear"></i> Batal Simpan
+											</button>
+											<button className="btn btn-primary btn-lg float-sm-right mr-2" title="Simpan Nilai" disabled={FlagTombol} onClick={SimpanNilai}>
+												<i className="fa fa-save"></i> Simpan Nilai
+											</button>
+										</>
 									}
 								</div>
 							</div>

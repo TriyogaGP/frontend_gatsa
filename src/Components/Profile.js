@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import axios from 'axios';
 import Select from 'react-select';
+import 'react-responsive-modal/styles.css';
+import { Modal } from 'react-responsive-modal';
 import env from 'react-dotenv'
 import Swal from 'sweetalert2';
 
@@ -44,6 +46,11 @@ function Profile(props) {
 	const [DataKabKota, setDataKabKota] = useState(null);
 	const [DataKecamatan, setDataKecamatan] = useState(null);
 	const [DataKelurahan, setDataKelurahan] = useState(null);
+	const [viewBerkas, setviewBerkas] = useState({
+		kondisi: false,
+		bagian: null
+	});
+	const [Berkas, setBerkas] = useState(null);
 	const [isloading, setIsLoading] = useState({
 		load_kabkota: false,
 		load_kecamatan: false,
@@ -56,7 +63,7 @@ function Profile(props) {
 	let MengajarKelas = mengajarKelas.split(', ').sort()
 	let MengajarBidang = mengajarBidang.split(', ').sort()
 	let hasilJabatan
-	let jabatanArray = JabatanGuru.split(', ').sort().map((value, key) => {
+	JabatanGuru.split(', ').sort().map((value, key) => {
 		if(value === "Wali Kelas"){
 			hasilJabatan = JabatanGuru.split(', ').sort().fill("Wali Kelas "+values.walikelas, key)
 		}
@@ -139,13 +146,22 @@ function Profile(props) {
 
 	const ubahKondisiData = (nilai, kondisi) => {
 		if(kondisi === 'nama'){ setFlag({...flag, flagNama: nilai}) }
-		if(kondisi === 'email'){ setFlag({...flag, flagEmail: nilai}) }
+		if(kondisi === 'email'){ setFlag({...flag, flagEmail: nilai});}
 		if(kondisi === 'telepon'){ setFlag({...flag, flagTelepon: nilai}) }
 		if(kondisi === 'alamat'){ setFlag({...flag, flagAlamat: nilai}) }
 		if(kondisi === 'provinsi'){ setFlag({...flag, flagProvinsi: nilai}) }
 		if(kondisi === 'kabkota'){ setFlag({...flag, flagKabupatenKota: nilai}) }
 		if(kondisi === 'kecamatan'){ setFlag({...flag, flagKecamatan: nilai}) }
 		if(kondisi === 'kelurahan'){ setFlag({...flag, flagKelurahan: nilai}) }
+		if(kondisi === 'datapribadi'){ 
+			setFlag({
+				...flag, 
+				flagEmail: nilai,
+				flagTelepon: nilai,
+				flagAlamat: nilai,
+				flagProvinsi: nilai,
+			}) 
+		}
 	}
 
 	const ResponToast = (icon, msg) => {
@@ -186,6 +202,20 @@ function Profile(props) {
 				}
 			}
 		}
+	}
+
+	const PDFCreate = (id) => {
+		// console.log(id)
+		fetch(`${env.SITE_URL}restApi/moduleuser/detailUserPDF/${id}`, {
+			method: 'GET',
+      dataType: "xml",
+		})
+		.then(response => response.arrayBuffer())
+		.then(response => {
+			let blob = new Blob([response], { type: 'application/pdf' })
+			setBerkas(window.URL.createObjectURL(blob))
+			setviewBerkas({kondisi: true, bagian: 'siswa'}); 
+		})
 	}
 
 	const togglePassword = (aksi, kondisi) => {
@@ -242,7 +272,7 @@ function Profile(props) {
 		return error
 	}
 
-	const clearForm = () => {
+	const clearForm = (kondisi) => {
 		setUbahData({
 			namalengkap: '',
 			email: '',
@@ -253,10 +283,11 @@ function Profile(props) {
 			passwordbaru: '',
 			confpasswordbaru: ''
 		})
-		ubahKondisiData(false, 'email')
-		ubahKondisiData(false, 'telepon')
-		ubahKondisiData(false, 'alamat')
-		ubahKondisiData(false, 'provinsi')
+		if(kondisi === 'nama'){
+			ubahKondisiData(false, 'nama')
+		}else if(kondisi === 'datapribadi'){
+			ubahKondisiData(false, 'datapribadi')
+		}
 		setErrors({})
 	}
 
@@ -288,15 +319,20 @@ function Profile(props) {
 			err = Object.fromEntries(Object.entries(errors).filter(([key, value]) => key === 'passwordlama' || key === 'passwordbaru' || key === 'confpasswordbaru'))
 			pesan = 'Kata Sandi'
 		}
-		if(Object.entries(err).length > 0) return ResponToast('error', `Form ${pesan} masih ada yang kosong, tolong lengkapi terlebih dahulu. TerimaKasih`)
+		if(ubahJenis === 'datapribadi' || ubahJenis === 'katasandi'){
+			if(Object.entries(err).length > 0) return ResponToast('error', `Form ${pesan} masih ada yang kosong, tolong lengkapi terlebih dahulu. TerimaKasih`)
+		}
 		// console.log(kirimData)
 		try {
-			const profile_ubah = await axios.post(`${env.SITE_URL}restApi/moduleLogin/updateusers`, kirimData);
+			const profile_ubah = await axios.post(`${env.SITE_URL}restApi/moduleLogin/updateusers`, kirimData, {
+				headers: {
+					Authorization: `Bearer ${localStorage.getItem('access_token')}`
+				}
+			});
 			if(ubahJenis === 'nama'){
-				ubahKondisiData(false, 'nama')
 				localStorage.setItem('namaLengkap', ubahData.namalengkap)
 			}
-			clearForm()
+			clearForm(ubahJenis)
 			getData()
 			ResponToast('success', profile_ubah.data.message)
 			navigate('/profile');
@@ -427,7 +463,7 @@ function Profile(props) {
 									<div className="card-header p-2">
 										<ul className="nav nav-pills">
 											<li className="nav-item"><a className="nav-link active" href="#activity" data-toggle="tab">Activity</a></li>
-											<li className="nav-item"><a className="nav-link" href="#timeline" data-toggle="tab">Timeline</a></li>
+											{/* <li className="nav-item"><a className="nav-link" href="#timeline" data-toggle="tab">Timeline</a></li> */}
 											{values.codeLog === 1 &&
 												<li className="nav-item"><a className="nav-link" href="#ubah-katasandi" data-toggle="tab">Ubah Kata Sandi</a></li>
 											}
@@ -480,7 +516,7 @@ function Profile(props) {
 														<p className='errorMsg'>{errors.confpasswordbaru}</p>
 													</div>
 													<div className="modal-footer right-content-between">
-														<button onClick={clearForm} className="btn btn-primary btn-sm align-right">Batal</button>
+														<button onClick={() => clearForm(null)} className="btn btn-primary btn-sm align-right">Batal</button>
 														<button onClick={(x) => {ubahProfile('katasandi')}} className="btn btn-primary btn-sm align-right">Ubah Kata Sandi</button>
 													</div>
 												</>
@@ -605,7 +641,7 @@ function Profile(props) {
 														{/* {flag.flagProvinsi && <p className='errorMsg'>{errors.kode_pos}</p> } */}
 													</div>
 													<div className="modal-footer right-content-between">
-														<button onClick={clearForm} className="btn btn-primary btn-sm align-right">Batal</button>
+														<button onClick={() => clearForm('datapribadi')} className="btn btn-primary btn-sm align-right">Batal</button>
 														<button onClick={(x) => {ubahProfile('datapribadi')}} className="btn btn-primary btn-sm align-right">Ubah Data Pribadi</button>
 													</div>
 												</>
@@ -648,6 +684,54 @@ function Profile(props) {
 										<a onClick={keluar} className="btn btn-primary btn-block"><b>Keluar</b></a>
 									</div>
 								</div>
+								{values.roleID === 3 &&
+									<div className="card card-primary card-outline">
+										<div className="card-header">
+											<h3 className="card-title">Berkas Berkas</h3>
+										</div>
+										<div className="card-body">
+											<strong><i className="fas fa-file-pdf mr-1" /> Data Diri</strong>
+											<p className="text-muted">
+												<a onClick={() => PDFCreate(values.id_profile)} style={{cursor: 'pointer', color: 'blue'}}>{localStorage.getItem('namaLengkap')}</a>
+											</p>
+											<hr />
+											<strong><i className="fas fa-file-pdf mr-1" /> Ijazah</strong>
+											<p className="text-muted">
+												{values&&values.fc_ijazah ? 
+													<a onClick={() => {setBerkas(values.fc_ijazah); setviewBerkas({kondisi: true, bagian: 'berkas'});}} style={{cursor: 'pointer', color: 'blue'}}>FC Ijazah</a> : '-'
+												}	
+											</p>
+											<hr />
+											<strong><i className="fas fa-file-pdf mr-1" /> Kartu Keluarga</strong>
+											<p className="text-muted">
+												{values&&values.fc_kk ? 
+													<a onClick={() => {setBerkas(values.fc_kk); setviewBerkas({kondisi: true, bagian: 'berkas'});}} style={{cursor: 'pointer', color: 'blue'}}>FC Kartu Keluarga</a> : '-'
+												}
+											</p>
+											<hr />
+											<strong><i className="fas fa-file-pdf mr-1" /> KTP Orang Tua</strong>
+											<p className="text-muted">
+												{values&&values.fc_ktp_ortu ? 
+													<a onClick={() => {setBerkas(values.fc_ktp_ortu); setviewBerkas({kondisi: true, bagian: 'berkas'});}} style={{cursor: 'pointer', color: 'blue'}}>FC KTP Orang Tua</a> : '-'
+												}
+											</p>
+											<hr />
+											<strong><i className="fas fa-file-pdf mr-1" /> Akta Lahir</strong>
+											<p className="text-muted">
+												{values&&values.fc_akta_lahir ? 
+													<a onClick={() => {setBerkas(values.fc_akta_lahir); setviewBerkas({kondisi: true, bagian: 'berkas'});}} style={{cursor: 'pointer', color: 'blue'}}>FC Akta Lahir</a> : '-'
+												}
+											</p>
+											<hr />
+											<strong><i className="fas fa-file-pdf mr-1" /> Surat Keterangan Lulus</strong>
+											<p className="text-muted">
+												{values&&values.fc_skl ? 
+													<a onClick={() => {setBerkas(values.fc_skl); setviewBerkas({kondisi: true, bagian: 'berkas'});}} style={{cursor: 'pointer', color: 'blue'}}>FC Surat Keterangan Lulus</a> : '-'
+												}
+											</p>
+										</div>
+									</div>
+								}
 								{values.roleID === 2 &&
 									<>
 										<div className="card card-primary card-outline">
@@ -708,6 +792,29 @@ function Profile(props) {
 							</div>
 						</div>
 					</div>
+				</div>
+				<div style={{marginTop: '1000px'}}>
+					<Modal 
+						open={viewBerkas.kondisi} 
+						showCloseIcon={false}
+						closeOnOverlayClick={false}
+						classNames={{
+							overlay: 'customOverlay',
+							modal: 'customModal',
+						}}>
+						<div className="modal-header">
+							<h4 className="modal-title" id="my-modal-title">View Berkas</h4>
+							<button onClick={() => {setviewBerkas({kondisi: false, bagian: null}); setBerkas(null)}} className="close" aria-label="Close">
+								<span aria-hidden="true">×</span>
+							</button>
+						</div>
+						<iframe
+							src={viewBerkas.bagian === 'berkas' ? `${env.SITE_URL}pdf/${values.id_profile}-${values.nomor_induk}/${Berkas}` : `${Berkas}`}
+							type="application/pdf"
+							height={400}
+							width='100%'
+						/>
+					</Modal>
 				</div>
 			</section>
 		</div>

@@ -9,20 +9,27 @@ function Dashboard(props) {
 	const roleID = localStorage.getItem('roleID')
 	const idProfile = localStorage.getItem('idProfile')
 	const [expire, setExpire] = useState('');
+	const [DataGuru, setDataGuru] = useState({});
 	const [TotalDataArray, setTotalDataArray] = useState([]);
 	const [TotalDataObject, setTotalDataObject] = useState({});
 	const navigate = useNavigate();
+
+	const Kelas = DataGuru.mengajar_bidang
+	const Bidang = DataGuru.mengajar_bidang
 
 	useEffect(() => {
 		getData(roleID, idProfile)
 	},[roleID, idProfile])
 
 	const getData = async(roleID, idProfile) => {
-		const kode = roleID === '1' ? 'admin' : 'guru' 
+		const kode = roleID === '1' ? 'admin' : roleID === '2' ? 'guru' : roleID === '3' && 'siswa'
 		try {
 			const response = await axios.get(`${env.SITE_URL}restApi/moduleuser/dataDashboard?kode=${kode}&id_profile=${idProfile}`);
 			if(kode === 'admin') { setTotalDataObject(response.data.totalData); }
-			else if(kode === 'guru') { setTotalDataArray(response.data.totalData); }
+			else if(kode === 'guru') { 
+				setTotalDataArray(response.data.totalData.total)
+				setDataGuru(response.data.totalData.dataGuru)
+			}
 		} catch (error) {
 			console.log(error.response.data)
 		}
@@ -108,7 +115,7 @@ function Dashboard(props) {
 						</div>
 					</div>
 				}
-				{roleID === '2' &&
+				{roleID === '2' && Kelas !== null && Bidang !== null &&
 					<div className='row'>
 						{TotalDataArray && TotalDataArray.map(value => (
 							<div className="col-lg-3 col-6" key={value.kelas}>

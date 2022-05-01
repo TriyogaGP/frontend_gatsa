@@ -165,6 +165,7 @@ function Pengguna() {
 	const openDialog = (kondisi = null) => {
 		if(kondisi === 'tambah'){
 			getProvinsi()
+			getKelas()
 			getKabKotaOnly()
 			const randomPass = makeRandom(8)
 			setEditValues({
@@ -214,6 +215,7 @@ function Pengguna() {
 		setErrors({})
 		setEditValues({})
 		setTanggalLahir(null)
+		setWaliKelas(null)
 		setJabatan(null)
 		setMengajar(null)
 		setAgama(null)
@@ -577,12 +579,12 @@ function Pengguna() {
 			telp_wali: roleID === '3' ? Editvalues.telp_wali : null,
 			pendidikan_guru: roleID === '2' ? Pendidikan.pendidikan_guru ? Pendidikan.pendidikan_guru.value : null : null,
 			jabatan_guru: roleID === '2' ? JabatanArray ? JabatanArray.join(', ') : null : null,
-			mengajar_bidang: roleID === '2' ? MengajarArray ? MengajarArray.join(', ') : null : null,
-			mengajar_kelas: roleID === '2' ? MengajarKelasArray ? MengajarKelasArray.join(', ') : null : null,
+			mengajar_bidang: roleID === '2' ? MengajarArray.length > 0 ? MengajarArray.join(', ') : null : null,
+			mengajar_kelas: roleID === '2' ? MengajarKelasArray.length > 0 ? MengajarKelasArray.sort().join(', ') : null : null,
 			walikelas: roleID === '2' && JabatanArray.includes("Wali Kelas") ? WaliKelas&&WaliKelas.label : null,
 		}
 		if(Object.entries(errors).length > 0) return ResponToast('error', 'Form masih ada yang kosong, tolong lengkapi terlebih dahulu. TerimaKasih')
-		// console.log(payload)
+		// console.log(payload, MengajarArray, MengajarKelasArray.sort().join(', '))
 		setLoading(true) 
 		setValues([])
 		Loading(!Editvalues.id ? 'Sedang melakukan proses pengiriman konfirmasi pendaftaran akun ke alamat email anda' : 'Sedang melakukan proses update akun ke alamat email anda')
@@ -623,10 +625,13 @@ function Pengguna() {
 			const Akun = await axios.post(`${env.SITE_URL}restApi/moduleUser/updateuserby`, {
 				id: e.target.value,
 				jenis: jenis,
-				activeAkun: jenis == 'activeAkun' ? kondisi : null,
+				table: 'users',
+				activeAkun: jenis == 'activeAkun' ? kondisi : jenis == 'mutationAkun' && kondisi === '1' ? '0' : '1',
 				validasiAkun: jenis == 'validasiAkun' ? kondisi : null,
 				mutationAkun: jenis == 'mutationAkun' ? kondisi : null,
 			});
+			setValues([])
+			getData(roleID)
 			ResponToast('success', Akun.data.message)
 			navigate(`/pengguna?page=${match?.[1]}`);
 		} catch (error) {
@@ -694,9 +699,9 @@ function Pengguna() {
 		const jabatan_guru = String(record.jabatan_guru).split(', ')
 		const mengajar_bidang = String(record.mengajar_bidang).split(', ')
 		const mengajar_kelas = String(record.mengajar_kelas).split(', ')
+		if(record.mengajar_bidang !== ''){setMengajarArray(mengajar_bidang)}else{setMengajarArray([])}
+		if(record.mengajar_kelas !== ''){setMengajarKelasArray(mengajar_kelas)}else{setMengajarKelasArray([])}
 		setJabatanArray(jabatan_guru)
-		setMengajarArray(mengajar_bidang)
-		setMengajarKelasArray(mengajar_kelas)
 		setHobi({
 				value: hobi ? hobi.value : null,
 				label: hobi ? hobi.label : null,
@@ -774,6 +779,14 @@ function Pengguna() {
 
 	const lookRecord = (record) => {
 		// console.log("Look Record", record);
+		const JabatanGuru = String(record.jabatan_guru)
+		let hasilJabatan
+		JabatanGuru.split(', ').sort().map((value, key) => {
+			if(value === "Wali Kelas"){
+				hasilJabatan = JabatanGuru.split(', ').sort().fill("Wali Kelas "+record.walikelas, key)
+			}
+		})
+		let jabatanGuru = hasilJabatan && hasilJabatan.join(', ')
 		record = {
 			...record, 
 			name: LowerCase(record.name),
@@ -784,6 +797,7 @@ function Pengguna() {
 			nama_ayah: record.nama_ayah ? LowerCase(record.nama_ayah) : null,
 			nama_ibu: record.nama_ibu ? LowerCase(record.nama_ibu) : null,
 			nama_wali: record.nama_wali ? LowerCase(record.nama_wali) : null,
+			jabatan_guru: jabatanGuru ? jabatanGuru : '-',
 		}
 		setLookValues(record)
 		getKelas()
@@ -801,12 +815,8 @@ function Pengguna() {
 			label: record.agama,
 		})
 		setMengajar({
-			value: record.mengajar_bidang,
-			label: record.mengajar_bidang,
-		})
-		setJabatan({
-			value: record.jabatan_guru,
-			label: record.jabatan_guru,
+			value: record.mengajar_bidang ? record.mengajar_bidang : '-',
+			label: record.mengajar_bidang ? record.mengajar_bidang : '-',
 		})
 		const citacita = optionsCitaCita.find(datacitacita => datacitacita.value === String(record.cita_cita));
 		const hobi = optionsHobi.find(datahobi => datahobi.value === String(record.hobi));
@@ -1497,6 +1507,7 @@ function Pengguna() {
 		{ value: 'Bahasa Indonesia', label: 'Bahasa Indonesia' },
 		{ value: 'Bahasa Inggris', label: 'Bahasa Inggris' },
 		{ value: 'Bahasa Sunda', label: 'Bahasa Sunda' },
+		{ value: 'BTQ', label: 'BTQ' },
 		{ value: 'Fiqih', label: 'Fiqih' },
 		{ value: 'IPA Terpadu', label: 'IPA Terpadu' },
 		{ value: 'IPS Terpadu', label: 'IPS Terpadu' },
@@ -2456,7 +2467,7 @@ function Pengguna() {
 									</div>
 									<div className='row'>
 										<div className='col-md-4'>Jabatan</div>
-										<div className='col-md-8'>: {Jabatan ? Jabatan.label === 'Wali Kelas' ? Jabatan.label+' ('+Lookvalues.walikelas+')' : Jabatan.label : '-'}</div>
+										<div className='col-md-8'>: {Lookvalues&&Lookvalues.jabatan_guru ? Lookvalues.jabatan_guru : '-'}</div>
 									</div>
 									<div className='row'>
 										<div className='col-md-4'>Mengajar Bidang</div>

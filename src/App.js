@@ -8,6 +8,7 @@ import KelasSiswa from './Components/Master/KelasSiswa';
 import Register from './Components/Register';
 import Lockscreen from './Components/Lockscreen';
 import VerificationAkun from './Components/VerificationAkun';
+import JadwalMengajar from './Components/Master/JadwalMengajar';
 import Penilaian from './Components/Proses/Penilaian';
 import Layout from './Layout/Layout';
 import './App.css';
@@ -25,6 +26,7 @@ function App() {
         <Route path='/pengguna' element={<div className='wrapper'><Layout /><Pengguna /></div>} />
         <Route path='/kelas' element={<div className='wrapper'><Layout /><Kelas /></div>} />
         <Route path='/kelassiswa' element={<div className='wrapper'><Layout /><KelasSiswa/></div>} />
+        <Route path='/jadwalngajar' element={<div className='wrapper'><Layout /><JadwalMengajar title='Jadwal pengajar'/></div>} />
         <Route path='/penilaian' element={<div className='wrapper'><Layout /><Penilaian title='Penilaian'/></div>} />
       </Routes>
     </BrowserRouter>
