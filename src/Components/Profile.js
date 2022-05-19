@@ -106,23 +106,23 @@ function Profile(props) {
 	},[Provinsi, KabupatenKota, Kecamatan, Kelurahan])
 
 	const getData = async() => {
-		const response = await axios.get(`${env.SITE_URL}restApi/moduleLogin/getusers/${localStorage.getItem('idProfile')}`, {
+		const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getusers/${localStorage.getItem('idProfile')}`, {
 			headers: {
 				Authorization: `Bearer ${localStorage.getItem('access_token')}`
 			}
 		});
-		setValues(response.data.data);
+		setValues(response.data.result);
 		setViewValues({
 			...Viewvalues, 
-			nama_provinsi: Lower(response.data.data.nama_provinsi), 
-			nama_kabkota: Lower(response.data.data.nama_kabkota),
-			nama_kecamatan: Lower(response.data.data.nama_kecamatan),
-			nama_kelurahan: Lower(response.data.data.nama_kelurahan)
+			nama_provinsi: Lower(response.data.result.nama_provinsi), 
+			nama_kabkota: Lower(response.data.result.nama_kabkota),
+			nama_kecamatan: Lower(response.data.result.nama_kecamatan),
+			nama_kelurahan: Lower(response.data.result.nama_kelurahan)
 		})
 		getProvinsi()
-		getKabKota(response.data.data.provinsi)
-		getKecamatan(response.data.data.kabkota)
-		getKelurahan(response.data.data.kecamatan)
+		getKabKota(response.data.result.provinsi)
+		getKecamatan(response.data.result.kabkota)
+		getKelurahan(response.data.result.kecamatan)
 	}
 
 	const handleChange = (e) => {
@@ -135,7 +135,7 @@ function Profile(props) {
 
 	const keluar = async() => {
 		try {
-			await axios.get(`${env.SITE_URL}restApi/moduleLogin/logout/${localStorage.getItem('idProfile')}`);
+			await axios.get(`${env.SITE_URL}api/v1/moduleMain/logout/${localStorage.getItem('idProfile')}`);
 			localStorage.clear()
 			ResponToast('success', 'Anda berhasil keluar dari panel ini .. Terima Kasih !')
 			navigate('/');
@@ -175,7 +175,7 @@ function Profile(props) {
 	}
 
 	const uploadFile = async(dataFile) => {
-		console.log(dataFile)
+		// console.log(dataFile)
 		const size = (dataFile.size/1024)
 		if(size > 5120){
 			ResponToast('warning', 'Ukuran gambar terlalu besar !')
@@ -186,7 +186,7 @@ function Profile(props) {
 			formData.append("nama", LowerCase(localStorage.getItem('namaLengkap')));
 			formData.append("file", dataFile);
 			try {
-				const uploadImage = await axios.post(`${env.SITE_URL}restApi/moduleLogin/updateImage`, formData, {
+				const uploadImage = await axios.post(`${env.SITE_URL}api/v1/moduleMain/updateFile`, formData, {
 				headers: {
 					"Content-Type": "multipart/form-data",
 				}
@@ -206,7 +206,7 @@ function Profile(props) {
 
 	const PDFCreate = (id) => {
 		// console.log(id)
-		fetch(`${env.SITE_URL}restApi/moduleuser/detailUserPDF/${id}`, {
+		fetch(`${env.SITE_URL}api/v1/moduleMain/detailUserPDF/${id}`, {
 			method: 'GET',
       dataType: "xml",
 		})
@@ -324,7 +324,7 @@ function Profile(props) {
 		}
 		// console.log(kirimData)
 		try {
-			const profile_ubah = await axios.post(`${env.SITE_URL}restApi/moduleLogin/updateusers`, kirimData, {
+			const profile_ubah = await axios.post(`${env.SITE_URL}api/v1/moduleMain/updateprofile`, kirimData, {
 				headers: {
 					Authorization: `Bearer ${localStorage.getItem('access_token')}`
 				}
@@ -356,9 +356,9 @@ function Profile(props) {
 
 	const getProvinsi = async() => {
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getprovinsi`);
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getprovinsi`);
 			// console.log(response.data.data)
-			setProvinsi(response.data.data);
+			setProvinsi(response.data.result);
 		} catch (error) {
 			console.log(error.response.data)
 			ResponToast('error', error.response.data.message)
@@ -369,11 +369,11 @@ function Profile(props) {
 		if(!idprovinsi) return
 		setIsLoading({load_kabkota: true})
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkabkota/${idprovinsi.value ? idprovinsi.value : idprovinsi}`);
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getkabkota/${idprovinsi.value ? idprovinsi.value : idprovinsi}`);
 			// if(Editvalues.id) return setKabupatenKota(response.data.data);
 			setTimeout(() => {
 				setIsLoading({load_kabkota: false})
-				setKabupatenKota(response.data.data);
+				setKabupatenKota(response.data.result);
 			}, 1000);
 		} catch (error) {
 			setIsLoading({load_kabkota: false})
@@ -386,12 +386,12 @@ function Profile(props) {
 		if(!idkabkota) return
 		setIsLoading({load_kecamatan: true})
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkecamatan/${idkabkota.value ? idkabkota.value : idkabkota}`);
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getkecamatan/${idkabkota.value ? idkabkota.value : idkabkota}`);
 			// console.log(response.data.data)
 			// if(Editvalues.id) return setKecamatan(response.data.data);
 			setTimeout(() => {
 				setIsLoading({load_kecamatan: false})
-				setKecamatan(response.data.data);
+				setKecamatan(response.data.result);
 			}, 1000);
 		} catch (error) {
 			setIsLoading({load_kecamatan: false})
@@ -404,12 +404,12 @@ function Profile(props) {
 		if(!idkecamatan) return
 		setIsLoading({load_kelurahan: true})
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkeldesa/${idkecamatan.value ? idkecamatan.value : idkecamatan}`);
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getkeldesa/${idkecamatan.value ? idkecamatan.value : idkecamatan}`);
 			// console.log(response.data.data)
 			// if(Editvalues.id) return setKelurahan(response.data.data);
 			setTimeout(() => {
 				setIsLoading({load_kelurahan: false})
-				setKelurahan(response.data.data);
+				setKelurahan(response.data.result);
 			}, 1000);
 		} catch (error) {
 			setIsLoading({load_kelurahan: false})

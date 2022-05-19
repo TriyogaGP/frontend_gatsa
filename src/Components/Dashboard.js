@@ -22,13 +22,13 @@ function Dashboard(props) {
 	},[roleID, idProfile])
 
 	const getData = async(roleID, idProfile) => {
-		const kode = roleID === '1' ? 'admin' : roleID === '2' ? 'guru' : roleID === '3' && 'siswa'
+		const role = roleID === '1' ? 'admin' : roleID === '2' ? 'guru' : roleID === '3' && 'siswa'
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleuser/dataDashboard?kode=${kode}&id_profile=${idProfile}`);
-			if(kode === 'admin') { setTotalDataObject(response.data.totalData); }
-			else if(kode === 'guru') { 
-				setTotalDataArray(response.data.totalData.total)
-				setDataGuru(response.data.totalData.dataGuru)
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/dataDashboard?role=${role}&id_profile=${idProfile}`);
+			if(role === 'admin') { setTotalDataObject(response.data.result); }
+			else if(role === 'guru') { 
+				setTotalDataArray(response.data.result.total)
+				setDataGuru(response.data.result.dataGuru)
 			}
 		} catch (error) {
 			console.log(error.response.data)
@@ -36,16 +36,16 @@ function Dashboard(props) {
 	}
 
 	const refreshToken = async() => {
-		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleLogin/token/${localStorage.getItem('idProfile')}`);
-			localStorage.setItem('access_token', response.data.access_token)
-			const decoded = jwt_decode(response.data.access_token);
-			setExpire(decoded.exp);
-		} catch (error) {
-			if(error.response){
-				navigate('/');
-			}
-		}
+		// try {
+		// 	const response = await axios.get(`${env.SITE_URL}restApi/moduleLogin/token/${localStorage.getItem('idProfile')}`);
+		// 	localStorage.setItem('access_token', response.data.access_token)
+		// 	const decoded = jwt_decode(response.data.access_token);
+		// 	setExpire(decoded.exp);
+		// } catch (error) {
+		// 	if(error.response){
+		// 		navigate('/');
+		// 	}
+		// }
 	}
 
 	return (

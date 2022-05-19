@@ -19,7 +19,7 @@ function Header(props) {
 	}
 	const keluar = async() => {
 		try {
-			await axios.get(`${env.SITE_URL}restApi/moduleLogin/logout/${localStorage.getItem('idProfile')}`);
+			await axios.get(`${env.SITE_URL}api/v1/moduleMain/logout/${localStorage.getItem('idProfile')}`);
 			localStorage.clear()
 			ResponToast('success', 'Anda berhasil keluar dari panel ini .. Terima Kasih !')
 			navigate('/');

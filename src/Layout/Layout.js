@@ -23,12 +23,12 @@ function Layout() {
 
 	const getData = async() => {
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleLogin/getusers/${localStorage.getItem('idProfile')}`, {
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getusers/${localStorage.getItem('idProfile')}`, {
 				headers: {
 					Authorization: `Bearer ${accessToken}`
 				}
 			});
-			setValues(response.data.data);
+			setValues(response.data.result);
 		} catch (error) {
 			console.log(error.response.data)
 			ResponToast('info', error.response.data.message)
@@ -37,33 +37,33 @@ function Layout() {
 	}
 
 	const refreshToken = async() => {
-		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleLogin/token/${localStorage.getItem('idProfile')}`);
-			localStorage.setItem('access_token', response.data.access_token)
-			const decoded = jwt_decode(response.data.access_token);
-			setExpire(decoded.exp);
-		} catch (error) {
-			if(error.response){
-				navigate('/');
-			}
-		}
+		// try {
+		// 	const response = await axios.get(`${env.SITE_URL}restApi/moduleLogin/token/${localStorage.getItem('idProfile')}`);
+		// 	localStorage.setItem('access_token', response.data.access_token)
+		// 	const decoded = jwt_decode(response.data.access_token);
+		// 	setExpire(decoded.exp);
+		// } catch (error) {
+		// 	if(error.response){
+		// 		navigate('/');
+		// 	}
+		// }
 	}
 
-	const axiosJWT = axios.create();
+	// const axiosJWT = axios.create();
 
-	axiosJWT.interceptors.request.use(async(config) => {
-		const currentDate = new Date();
-		if(expire * 1000 < currentDate.getTime()){
-				const response = await axios.get(`${env.SITE_URL}restApi/moduleLogin/token/${localStorage.getItem('idProfile')}`);
-				config.headers.Authorization = `Bearer ${response.data.access_token}`;
-				localStorage.setItem('access_token', response.data.access_token)
-				const decoded = jwt_decode(response.data.access_token);
-				setExpire(decoded.exp);
-		}
-		return config;
-	}, (error) => {
-		return Promise.reject(error);
-	});
+	// axiosJWT.interceptors.request.use(async(config) => {
+	// 	const currentDate = new Date();
+	// 	if(expire * 1000 < currentDate.getTime()){
+	// 			const response = await axios.get(`${env.SITE_URL}restApi/moduleLogin/token/${localStorage.getItem('idProfile')}`);
+	// 			config.headers.Authorization = `Bearer ${response.data.access_token}`;
+	// 			localStorage.setItem('access_token', response.data.access_token)
+	// 			const decoded = jwt_decode(response.data.access_token);
+	// 			setExpire(decoded.exp);
+	// 	}
+	// 	return config;
+	// }, (error) => {
+	// 	return Promise.reject(error);
+	// });
 
 	const ResponToast = (icon, msg) => {
     Swal.fire({  

@@ -34,13 +34,13 @@ function JadwalMengajar(props) {
 
 	const getGuru = async() => {
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getusers/?idRole=2&idProfile=${localStorage.getItem('idProfile')}`, {
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getdatausers/2`, {
 				headers: {
 					Authorization: `Bearer ${localStorage.getItem('access_token')}`
 				}
 			});
 			let dataGuru = new Array()
-			let Guru = response.data.data
+			let Guru = response.data.result
 			Guru.sort().map((x)=>{
 				dataGuru.push({value: x.id, label: x.name})
 			})
@@ -53,14 +53,14 @@ function JadwalMengajar(props) {
 
 	const getData = async(x) => {
 		if(x != null){
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleLogin/getusers/${x.value}`, {
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getusers/${x.value}`, {
 				headers: {
 					Authorization: `Bearer ${localStorage.getItem('access_token')}`
 				}
 			});
 			getJadwal(x.value)
-			const mengajarKelas = String(response.data.data.mengajar_kelas)
-			const mengajarBidang = String(response.data.data.mengajar_bidang)
+			const mengajarKelas = String(response.data.result.mengajar_kelas)
+			const mengajarBidang = String(response.data.result.mengajar_bidang)
 			let MengajarKelas = mengajarKelas.split(', ').sort()
 			let MengajarBidang = mengajarBidang.split(', ').sort()
 			let mapel = new Array()		
@@ -83,9 +83,9 @@ function JadwalMengajar(props) {
 
 	const getJadwal = async(id) => {
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getjadwalNgajar/${id}`);
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getjadwalNgajar/${id}`);
 			// console.log(response.data.data)
-			setValues(response.data.data);
+			setValues(response.data.result);
 		} catch (error) {
 			console.log(error.response.data)
 			ResponToast('error', error.response.data.message)
@@ -101,7 +101,7 @@ function JadwalMengajar(props) {
 		}
 		if(!payload.id || !payload.mapel || !payload.kelas) return ResponToast('error', 'Form masih ada yang kosong, tolong lengkapi terlebih dahulu. TerimaKasih')
 		try {
-			const simpan = await axios.post(`${env.SITE_URL}restApi/moduleUser/jadwalngajar`, payload); 
+			const simpan = await axios.post(`${env.SITE_URL}api/v1/moduleMain/createJadwalNgajar`, payload); 
 			getJadwal(payload.id)
 			setKelas(null)
 			setMapel(null)
@@ -119,7 +119,7 @@ function JadwalMengajar(props) {
 
 	const deleteRecord = async(record) => {
 		try {
-			const dataJadwal = await axios.delete(`${env.SITE_URL}restApi/moduleUser/jadwalNgajar/${record.id_jadwal}`);
+			const dataJadwal = await axios.delete(`${env.SITE_URL}api/v1/moduleMain/deleteJadwalNgajar/${record.id_jadwal}`);
 			getData(Guru)
 			ResponToast('success', dataJadwal.data.message)
 		} catch (error) {
@@ -133,7 +133,7 @@ function JadwalMengajar(props) {
 	const selectStatus = async(e) => {
 		let kondisi = e.target.checked === true ? '1' : '0'
 		try {
-			const Status = await axios.post(`${env.SITE_URL}restApi/moduleUser/updateuserby`, {
+			const Status = await axios.post(`${env.SITE_URL}api/v1/moduleMain/updateStatus`, {
 				id: e.target.value,
 				table: 'jadwal_mengajar',
 				activeStatus: kondisi,
@@ -201,14 +201,14 @@ function JadwalMengajar(props) {
 			align: "center",
 		},
 		{
-			key: "kelas",
+			key: "kelas_mengajar",
 			text: "Kelas",
-			className: "kelas",
+			className: "kelas_mengajar",
 			align: "center",
 			width: '10%',
 			cell: record => { 
 				return (
-					<div style={{textAlign: 'center'}}>{record.kelas}</div>
+					<div style={{textAlign: 'center'}}>{record.kelas_mengajar}</div>
 				);
 			}
 		},

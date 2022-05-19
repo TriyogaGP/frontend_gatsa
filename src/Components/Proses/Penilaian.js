@@ -54,14 +54,14 @@ function Penilaian(props) {
 	},[])
 
 	const getData = async() => {
-		const response = await axios.get(`${env.SITE_URL}restApi/moduleLogin/getusers/${localStorage.getItem('idProfile')}`, {
+		const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getusers/${localStorage.getItem('idProfile')}`, {
 			headers: {
 				Authorization: `Bearer ${localStorage.getItem('access_token')}`
 			}
 		});
-		setValues(response.data.data);
-		const mengajarKelas = String(response.data.data.mengajar_kelas)
-		const mengajarBidang = String(response.data.data.mengajar_bidang)
+		setValues(response.data.result);
+		const mengajarKelas = String(response.data.result.mengajar_kelas)
+		const mengajarBidang = String(response.data.result.mengajar_bidang)
 		let MengajarKelas = mengajarKelas.split(', ').sort()
 		let MengajarBidang = mengajarBidang.split(', ').sort()
 		let mapel = new Array()		
@@ -78,10 +78,10 @@ function Penilaian(props) {
 
 	const getNilai = async(mapel, kelas) => {
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/penilaian?mapel=${mapel}&kelas=${kelas}`);
-			if(response.data.data.length > 0){ setFlagTombol(false) }else{ setFlagTombol(true) }
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/penilaian?mapel=${mapel}&kelas=${kelas}`);
+			if(response.data.result.length > 0){ setFlagTombol(false) }else{ setFlagTombol(true) }
 			setLoading(false)
-			setDataNilai(response.data.data);
+			setDataNilai(response.data.result);
 		} catch (error) {
 			setLoading(false)
 			console.log(error.response.data)
@@ -100,7 +100,7 @@ function Penilaian(props) {
 		// console.log(payload)
 		setDataNilai([])
 		try {
-			const simpan = await axios.post(`${env.SITE_URL}restApi/moduleUser/ubahPenilaian`, payload); 
+			const simpan = await axios.post(`${env.SITE_URL}api/v1/moduleMain/ubahPenilaian`, payload); 
 			setNilai(null)
 			setDataTugas([])
 			setLoading(true)

@@ -267,14 +267,14 @@ function Pengguna() {
 	const getData = async(role) => {
 		setLoading(true)
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getusers/?idRole=${role}&idProfile=${localStorage.getItem('idProfile')}`, {
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getdatausers/${role}`, {
 				headers: {
 					Authorization: `Bearer ${accessToken}`
 				}
 			});
 			// console.log(response.data.data)
 			setLoading(false)
-			setValues(response.data.data);
+			setValues(response.data.result);
 		} catch (error) {
 			console.log(error.response.data)
 			ResponToast('error', error.response.data.message)
@@ -293,9 +293,9 @@ function Pengguna() {
 
 	const getKelas = async() => {
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkelas?kelas=ALL`);
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getkelas?kelas=ALL`);
 			// console.log(response.data.data)
-			setPilihKelas(response.data.data);
+			setPilihKelas(response.data.result);
 		} catch (error) {
 			console.log(error.response.data)
 			ResponToast('error', error.response.data.message)
@@ -304,9 +304,9 @@ function Pengguna() {
 
 	const getProvinsi = async() => {
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getprovinsi`);
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getprovinsi`);
 			// console.log(response.data.data)
-			setProvinsi(response.data.data);
+			setProvinsi(response.data.result);
 		} catch (error) {
 			console.log(error.response.data)
 			ResponToast('error', error.response.data.message)
@@ -315,9 +315,9 @@ function Pengguna() {
 
 	const getKabKotaOnly = async() => {
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkabkotaonly`);
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getkabkotaonly`);
 			// console.log(response.data.data)
-			setKabupatenKotaOnly(response.data.data);
+			setKabupatenKotaOnly(response.data.result);
 		} catch (error) {
 			console.log(error.response.data)
 			ResponToast('error', error.response.data.message)
@@ -327,11 +327,11 @@ function Pengguna() {
 	const getKabKota = async(idprovinsi) => {
 		setIsLoading({load_kabkota: true})
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkabkota/${idprovinsi.value ? idprovinsi.value : idprovinsi}`);
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getkabkota/${idprovinsi.value ? idprovinsi.value : idprovinsi}`);
 			// if(Editvalues.id) return setKabupatenKota(response.data.data);
 			setTimeout(() => {
 				setIsLoading({load_kabkota: false})
-				setKabupatenKota(response.data.data);
+				setKabupatenKota(response.data.result);
 			}, 1000);
 		} catch (error) {
 			setIsLoading({load_kabkota: false})
@@ -343,12 +343,12 @@ function Pengguna() {
 	const getKecamatan = async(idkabkota) => {
 		setIsLoading({load_kecamatan: true})
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkecamatan/${idkabkota.value ? idkabkota.value : idkabkota}`);
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getkecamatan/${idkabkota.value ? idkabkota.value : idkabkota}`);
 			// console.log(response.data.data)
 			// if(Editvalues.id) return setKecamatan(response.data.data);
 			setTimeout(() => {
 				setIsLoading({load_kecamatan: false})
-				setKecamatan(response.data.data);
+				setKecamatan(response.data.result);
 			}, 1000);
 		} catch (error) {
 			setIsLoading({load_kecamatan: false})
@@ -360,12 +360,12 @@ function Pengguna() {
 	const getKelurahan = async(idkecamatan) => {
 		setIsLoading({load_kelurahan: true})
 		try {
-			const response = await axios.get(`${env.SITE_URL}restApi/moduleUser/getkeldesa/${idkecamatan.value ? idkecamatan.value : idkecamatan}`);
+			const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getkeldesa/${idkecamatan.value ? idkecamatan.value : idkecamatan}`);
 			// console.log(response.data.data)
 			// if(Editvalues.id) return setKelurahan(response.data.data);
 			setTimeout(() => {
 				setIsLoading({load_kelurahan: false})
-				setKelurahan(response.data.data);
+				setKelurahan(response.data.result);
 			}, 1000);
 		} catch (error) {
 			setIsLoading({load_kelurahan: false})
@@ -386,7 +386,7 @@ function Pengguna() {
 			formData.append("file", dataFile);
 			Loading(`Sedang melakukan proses import data ${roleID === '3' ? 'siswa' : 'guru'}`)
 			try {
-				const uploadFile = await axios.post(`${env.SITE_URL}restApi/moduleuser/updateFile`, formData, {
+				const uploadFile = await axios.post(`${env.SITE_URL}api/v1/moduleMain/importexcel`, formData, {
 					headers: { 
 						"Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 					}
@@ -408,7 +408,7 @@ function Pengguna() {
 	}
 
 	const downloadTemplate = (roleid) => {
-		fetch(`${env.SITE_URL}restApi/moduleuser/downloadexcel/${roleid}`, {
+		fetch(`${env.SITE_URL}api/v1/moduleMain/downloadexcel/${roleid}`, {
 			method: 'GET',
       dataType: "xml",
 		})
@@ -422,7 +422,7 @@ function Pengguna() {
 
 	const exportData = (roleid, kategori) => {
 		Loading(`Sedang melakukan proses export data ${roleid === '3' ? 'siswa' : 'guru'}`)
-		fetch(`${env.SITE_URL}restApi/moduleuser/exportexcel/${roleid}/?export=${kategori}`, {
+		fetch(`${env.SITE_URL}api/v1/moduleMain/exportexcel/${roleid}/?export=${kategori}`, {
 			method: 'GET',
       dataType: "xml",
 		})
@@ -465,13 +465,13 @@ function Pengguna() {
 			formData.append("file", dataFile);
 			setLookValues({})
 			try {
-				const uploadBerkas = await axios.post(`${env.SITE_URL}restApi/moduleuser/updateBerkas`, formData, {
+				const uploadBerkas = await axios.post(`${env.SITE_URL}api/v1/moduleMain/updateBerkas`, formData, {
 					headers: { 
 						"Content-Type": "application/pdf",
 					}
 				});
 				// getData()
-				lookRecord(uploadBerkas.data.data)
+				lookRecord(uploadBerkas.data.result)
 				ResponToast('success', uploadBerkas.data.message)
 				if(kondisi==='ijazah'){fc_ijazah.current.value = "";}
 				else if(kondisi==='kk'){fc_kk.current.value = "";}
@@ -500,10 +500,12 @@ function Pengguna() {
 			kelas: kelas.label,
 		}
 		try {
-			const dataUsers = await axios.post(`${env.SITE_URL}restApi/moduleUser/ambilKelas`, payload);
+			const dataUsers = await axios.post(`${env.SITE_URL}api/v1/moduleMain/ambilkelas`, payload);
 			// console.log(dataUsers.data.data)
 			setLookValues({})
-			lookRecord(dataUsers.data.data)
+			setValues([])
+			getData(roleID)
+			lookRecord(dataUsers.data.result.data)
 			ResponToast('success', dataUsers.data.message)
 			navigate(`/pengguna?page=${match?.[1]}`);
 		} catch (error) {
@@ -589,7 +591,7 @@ function Pengguna() {
 		setValues([])
 		Loading(!Editvalues.id ? 'Sedang melakukan proses pengiriman konfirmasi pendaftaran akun ke alamat email anda' : 'Sedang melakukan proses update akun ke alamat email anda')
 		try {
-			const dataUsers = await axios.post(`${env.SITE_URL}restApi/moduleUser/createupdateusers`, payload);
+			const dataUsers = await axios.post(`${env.SITE_URL}api/v1/moduleMain/createupdateusers`, payload);
 			getData(roleID)
 			setOpen(false)
 			setLoading(false) 
@@ -622,13 +624,13 @@ function Pengguna() {
 	const selectAkun = async(e, jenis) => {
 		let kondisi = e.target.checked === true ? '1' : '0'
 		try {
-			const Akun = await axios.post(`${env.SITE_URL}restApi/moduleUser/updateuserby`, {
+			const Akun = await axios.post(`${env.SITE_URL}api/v1/moduleMain/updateStatus`, {
 				id: e.target.value,
 				jenis: jenis,
 				table: 'users',
 				activeAkun: jenis == 'activeAkun' ? kondisi : jenis == 'mutationAkun' && kondisi === '1' ? '0' : '1',
-				validasiAkun: jenis == 'validasiAkun' ? kondisi : null,
-				mutationAkun: jenis == 'mutationAkun' ? kondisi : null,
+				validasiAkun: jenis == 'validasiAkun' ? kondisi : '',
+				mutationAkun: jenis == 'mutationAkun' ? kondisi : '',
 			});
 			setValues([])
 			getData(roleID)
@@ -765,7 +767,7 @@ function Pengguna() {
 		// console.log("Delete Record", record);
 		setLoading(true) 
 		try {
-			const dataUsers = await axios.delete(`${env.SITE_URL}restApi/moduleUser/getusers/${record.id}`);
+			const dataUsers = await axios.delete(`${env.SITE_URL}api/v1/moduleMain/getusers/${record.id}`);
 			getData(roleID)
 			setLoading(false) 
 			ResponToast('success', dataUsers.data.message)
@@ -896,7 +898,7 @@ function Pengguna() {
 
 	const PDFCreate = (id) => {
 		// console.log(id)
-		fetch(`${env.SITE_URL}restApi/moduleuser/detailUserPDF/${id}`, {
+		fetch(`${env.SITE_URL}api/v1/moduleMain/detailUserPDF/${id}`, {
 			method: 'GET',
       dataType: "xml",
 		})
@@ -1241,12 +1243,14 @@ function Pengguna() {
 				return (
 					<Fragment>
 						<div style={{textAlign: 'center'}}>
-							<div className="form-group">
-								<div className="custom-control custom-switch custom-switch-off-default custom-switch-on-success">
-									<input type="checkbox" className="custom-control-input" id={"aktivAkun"+record.id} value={record.id} onChange={(e) => selectAkun(e, 'activeAkun')} defaultChecked={record.activeAkun === 0 ? '' : 'checked' } />
-									<label className="custom-control-label" htmlFor={"aktivAkun"+record.id}></label>
+							{ record.id != localStorage.getItem('idProfile') ?
+								<div className="form-group">
+									<div className="custom-control custom-switch custom-switch-off-default custom-switch-on-success">
+										<input type="checkbox" className="custom-control-input" id={"aktivAkun"+record.id} value={record.id} onChange={(e) => selectAkun(e, 'activeAkun')} defaultChecked={record.activeAkun === 0 ? '' : 'checked' } />
+										<label className="custom-control-label" htmlFor={"aktivAkun"+record.id}></label>
+									</div>
 								</div>
-							</div>
+							: record.activeAkun == 1 ? 'Aktif' : 'Tidak Aktif' }
 						</div>
 					</Fragment>
 				);
@@ -1304,19 +1308,23 @@ function Pengguna() {
 				return (
 					<Fragment>
 						<div style={{textAlign: 'center'}}>
-							<button
-								className="btn btn-primary btn-xs"
-								title="Ubah Data"
-								onClick={() => editRecord(record)}>
-								<i className="fa fa-pencil-alt"></i>
-							</button>
-							<button
-								className="btn btn-danger btn-xs"
-								title="Hapus Data"
-								onClick={() => deleteRecord(record)}
-								style={{margin: '5px'}}>
-								<i className="fa fa-trash-alt"></i>
-							</button>
+							{ record.id != localStorage.getItem('idProfile') &&
+								<>
+									<button
+										className="btn btn-primary btn-xs"
+										title="Ubah Data"
+										onClick={() => editRecord(record)}>
+										<i className="fa fa-pencil-alt"></i>
+									</button>
+									<button
+										className="btn btn-danger btn-xs"
+										title="Hapus Data"
+										onClick={() => deleteRecord(record)}
+										style={{margin: '5px'}}>
+										<i className="fa fa-trash-alt"></i>
+									</button>
+								</>
+							}
 							<button
 								className="btn btn-success btn-xs"
 								title="Lihat Data"
@@ -2430,7 +2438,7 @@ function Pengguna() {
 							</div>
 							<br/>
 							<div className='row'>
-								<div className='col-md-4'>{roleID === '3' ? 'NISN' : roleID === '2' && 'NIP' }</div>
+								<div className='col-md-4'>{roleID === '3' ? 'NISN' : roleID === '2' ? 'NIP' : 'Nomor Inisial / UsernameID' }</div>
 								<div className='col-md-8'>: {Lookvalues.nomor_induk ? Lookvalues.nomor_induk : '-'}</div>
 							</div>
 							{roleID === '3' &&

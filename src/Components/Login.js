@@ -80,19 +80,23 @@ function Login() {
 
 	const masukGmail = async(data) => {
 		try {
-			const login = await axios.post(`${env.SITE_URL}restApi/moduleLogin/loginBygmail`, {
-				email: data.email
+			const login = await axios.post(`${env.SITE_URL}api/v1/moduleMain/login`, {
+				username: data.email,
+				gambar: data.imageUrl,
+				jenis: "Gmail"
 			});
+			console.log(login)
 			if(login){
-				localStorage.setItem('idProfile', login.data.data[0].id)
-				localStorage.setItem('namaLengkap', login.data.data[0].name)
-				localStorage.setItem('roleID', login.data.data[0].roleID)
-				localStorage.setItem('access_token', login.data.data.access_token)
-				const masukLog = await axios.post(`${env.SITE_URL}restApi/moduleLogin/postImage`, {
-					email: data.email,
-					gambar: data.imageUrl,
-				});
-				ResponToast('success', masukLog.data.message)
+				localStorage.setItem('idProfile', login.data.result.id)
+				localStorage.setItem('namaLengkap', login.data.result.name)
+				localStorage.setItem('roleID', login.data.result.roleID)
+				localStorage.setItem('access_token', login.data.result.accessToken)
+				// const masukLog = await axios.post(`${env.SITE_URL}api/v1/moduleMain/updateprofile`, {
+				// 	email: data.email,
+				// 	gambarGmail: data.imageUrl,
+				// 	ubah: "loginGmail"
+				// });
+				ResponToast('success', login.data.message)
 			}
 			navigate('/dashboard');
 			window.location.reload()
@@ -108,15 +112,16 @@ function Login() {
 		e.preventDefault();
 		setErrors(validateInput(values))
 		try {
-			const login = await axios.post(`${env.SITE_URL}restApi/moduleLogin/login`, {
+			const login = await axios.post(`${env.SITE_URL}api/v1/moduleMain/login`, {
 				username: values.username,
 				password: values.password,
+				jenis: "nonGmail"
 			});
 			if(login){
-				localStorage.setItem('idProfile', login.data.data[0].id)
-				localStorage.setItem('namaLengkap', login.data.data[0].name)
-				localStorage.setItem('roleID', login.data.data[0].roleID)
-				localStorage.setItem('access_token', login.data.data.access_token)
+				localStorage.setItem('idProfile', login.data.result.id)
+				localStorage.setItem('namaLengkap', login.data.result.name)
+				localStorage.setItem('roleID', login.data.result.roleID)
+				localStorage.setItem('access_token', login.data.result.accessToken)
 			}
 			ResponToast('success', login.data.message)
 			navigate('/dashboard');

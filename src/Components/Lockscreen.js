@@ -27,8 +27,8 @@ function Lockscreen() {
 	},[])
 
 	const getData = async() => {
-		const response = await axios.get(`${env.SITE_URL}restApi/moduleLogin/getuserslock/${localStorage.getItem('idProfile')}`);
-		setData(response.data.data);
+		const response = await axios.get(`${env.SITE_URL}api/v1/moduleMain/getuserslookscreen/${localStorage.getItem('idProfile')}`);
+		setData(response.data.result);
 	}
 
 	const handleChange = (e) => {
@@ -72,15 +72,16 @@ function Lockscreen() {
 		e.preventDefault();
 		setErrors(validateInput(values))
 		try {
-			const login = await axios.post(`${env.SITE_URL}restApi/moduleLogin/login`, {
+			const login = await axios.post(`${env.SITE_URL}api/v1/moduleMain/login`, {
 				username: data.email,
 				password: values.password,
+				jenis: "nonGmail"
 			});
 			if(login){
-				localStorage.setItem('idProfile', login.data.data[0].id)
-				localStorage.setItem('namaLengkap', login.data.data[0].name)
-				localStorage.setItem('roleID', login.data.data[0].roleID)
-				localStorage.setItem('access_token', login.data.data.access_token)
+				localStorage.setItem('idProfile', login.data.result.id)
+				localStorage.setItem('namaLengkap', login.data.result.name)
+				localStorage.setItem('roleID', login.data.result.roleID)
+				localStorage.setItem('access_token', login.data.result.accessToken)
 			}
 			ResponToast('success', login.data.message)
 			navigate('/dashboard');
@@ -95,18 +96,20 @@ function Lockscreen() {
 	
 	const masukGmail = async() => {
 		try {
-			const login = await axios.post(`${env.SITE_URL}restApi/moduleLogin/loginBygmail`, {
-				email: data.email
+			const login = await axios.post(`${env.SITE_URL}api/v1/moduleMain/login`, {
+				username: data.email,
+				gambar: data.gambarGmail,
+				jenis: "Gmail"
 			});
 			if(login){
-				localStorage.setItem('idProfile', login.data.data[0].id)
-				localStorage.setItem('namaLengkap', login.data.data[0].name)
-				localStorage.setItem('roleID', login.data.data[0].roleID)
-				localStorage.setItem('access_token', login.data.data.access_token)
-				await axios.post(`${env.SITE_URL}restApi/moduleLogin/postImage`, {
-					email: data.email,
-					gambar: data.gambarGmail,
-				});
+				localStorage.setItem('idProfile', login.data.result.id)
+				localStorage.setItem('namaLengkap', login.data.result.name)
+				localStorage.setItem('roleID', login.data.result.roleID)
+				localStorage.setItem('access_token', login.data.result.accessToken)
+				// await axios.post(`${env.SITE_URL}api/v1/moduleMain/updateprofile`, {
+				// 	email: data.email,
+				// 	ubah: "loginGmail"
+				// });
 			}
 			ResponToast('success', login.data.message)
 			navigate('/dashboard');
@@ -143,7 +146,7 @@ function Lockscreen() {
 							</div>
 							<div className="lockscreen-credentials">
 								<div className="input-group">
-									<input type={passwordShown ? "text" : "password"} className="form-control" name='password' placeholder="Kata Sandi" autoComplete="off" value={values.password} onChange={handleChange} />
+									<input type={passwordShown ? "text" : "password"} className="form-control" name='password' placeholder="Kata Sandi" autoComplete="off" value={values.password} onChange={handleChange} onKeyPress={(e) => {if(e.key == "Enter"){e.preventDefault(); masuk(e);}}} />
 									<div className="input-group-append">
 										<button type="button" className="btn">
 											<span onClick={togglePassword} className={!passwordShown ? "fas fa-eye" : "fas fa-eye-slash"} />
